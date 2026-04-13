@@ -1,0 +1,362 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS custom properties ──────────────────────────────────────────────── */
+:root {
+  --color-navy: #0f1114;
+  --color-navy-800: #161b22;
+  --color-yellow: #f5c400;
+  --color-yellow-dim: #d4a900;
+  --color-risk-high: #ef4444;
+  --color-risk-medium: #f59e0b;
+  --color-risk-low: #22c55e;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Barlow', sans-serif;
+  background-color: #f3f4f6;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography utilities ───────────────────────────────────────────────── */
+.font-heading {
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.font-mono-clause {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+/* ── Score number ────────────────────────────────────────────────────────── */
+.score-number {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Severity badge colours ─────────────────────────────────────────────── */
+.badge-high {
+  @apply bg-red-100 text-red-700 border border-red-200;
+}
+
+.badge-medium {
+  @apply bg-amber-100 text-amber-700 border border-amber-200;
+}
+
+.badge-low {
+  @apply bg-green-100 text-green-700 border border-green-200;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.card {
+  @apply bg-white rounded-xl shadow-card p-5;
+}
+
+/* ── Tab underline animation ────────────────────────────────────────────── */
+.tab-active {
+  @apply text-yellow-600 border-b-2 border-yellow font-semibold;
+}
+
+.tab-inactive {
+  @apply text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300;
+}
+
+/* ── Upload zone ─────────────────────────────────────────────────────────── */
+.upload-zone {
+  @apply border-2 border-dashed border-gray-300 rounded-xl p-6 text-center
+         transition-all duration-200 cursor-pointer;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  @apply border-yellow bg-yellow-50;
+}
+
+.upload-zone.has-file {
+  @apply border-green-400 bg-green-50;
+}
+
+/* ── Action engine panel ─────────────────────────────────────────────────── */
+.action-panel {
+  background: #1a1f26;
+  border: 1px solid #252d3a;
+  border-radius: 0.75rem;
+}
+
+/* ── Timeline ────────────────────────────────────────────────────────────── */
+.timeline-line {
+  @apply absolute left-5 top-10 bottom-0 w-0.5 bg-gray-200;
+}
+
+/* ── Chat bubble ─────────────────────────────────────────────────────────── */
+.chat-bubble-user {
+  @apply bg-navy text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm max-w-xs ml-auto;
+}
+
+.chat-bubble-ai {
+  @apply bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3 text-sm max-w-sm shadow-sm;
+}
+
+/* ── Scrollbar styling ───────────────────────────────────────────────────── */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+/* ── Loading animation ───────────────────────────────────────────────────── */
+@keyframes pulse-yellow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.pulse-yellow {
+  animation: pulse-yellow 1.4s ease-in-out infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LANDING PAGE — DARK THEME UTILITIES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dark global scrollbar (landing + auth pages) ───────────────────────── */
+.dark-page ::-webkit-scrollbar { width: 8px; }
+.dark-page ::-webkit-scrollbar-track { background: #080a0d; }
+.dark-page ::-webkit-scrollbar-thumb { background: #2a3141; border-radius: 4px; }
+.dark-page ::-webkit-scrollbar-thumb:hover { background: #3a4255; }
+
+/* ── CSS grid pattern overlay ────────────────────────────────────────────── */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Gradient text ──────────────────────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #f5c400 0%, #ff8c00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-red {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee0979 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Glowing amber orb ──────────────────────────────────────────────────── */
+@keyframes orb-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.65; transform: scale(1.06); }
+}
+
+.hero-orb {
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,196,0,0.18) 0%, rgba(255,140,0,0.06) 50%, transparent 70%);
+  animation: orb-pulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Scroll-in fade animation ────────────────────────────────────────────── */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-in-up.delay-1 { transition-delay: 0.1s; }
+.fade-in-up.delay-2 { transition-delay: 0.2s; }
+.fade-in-up.delay-3 { transition-delay: 0.3s; }
+.fade-in-up.delay-4 { transition-delay: 0.4s; }
+
+/* ── Section divider with center glow ───────────────────────────────────── */
+.section-divider {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #1e2530 20%, #1e2530 80%, transparent);
+}
+
+.section-divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245,196,0,0.6), transparent);
+}
+
+/* ── Dark card ───────────────────────────────────────────────────────────── */
+.dark-card {
+  background: #0f1218;
+  border: 1px solid #1e2530;
+  border-radius: 12px;
+}
+
+/* ── Photo frame — "CCTV monitor" look ──────────────────────────────────── */
+.photo-frame {
+  border: 1px solid rgba(245,196,0,0.25);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(245,196,0,0.06), 0 0 0 1px rgba(245,196,0,0.08) inset;
+}
+
+/* ── Yellow CTA button glow ──────────────────────────────────────────────── */
+.btn-yellow {
+  background: #f5c400;
+  color: #080a0d;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.btn-yellow:hover {
+  background: #ffd740;
+  box-shadow: 0 0 24px rgba(245,196,0,0.35);
+  transform: translateY(-1px);
+}
+
+.btn-yellow:active { transform: translateY(0); }
+
+/* ── Ghost button ────────────────────────────────────────────────────────── */
+.btn-ghost {
+  border: 1px solid rgba(245,196,0,0.4);
+  color: #f5c400;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: #f5c400;
+  background: rgba(245,196,0,0.08);
+}
+
+/* ── Pricing card yellow glow (Pro tier) ─────────────────────────────────── */
+.pricing-pro {
+  border: 1px solid rgba(245,196,0,0.5);
+  box-shadow: 0 0 30px rgba(245,196,0,0.08), 0 0 0 1px rgba(245,196,0,0.12) inset;
+}
+
+/* ── Pulsing live dot ────────────────────────────────────────────────────── */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50%       { opacity: 0.8; box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+}
+
+.live-dot {
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Ambient glow on hero image border ───────────────────────────────────── */
+@keyframes border-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245,196,0,0.12); }
+  50%       { box-shadow: 0 0 40px rgba(245,196,0,0.22); }
+}
+
+.photo-frame-animated {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* ── Auth form input ─────────────────────────────────────────────────────── */
+.auth-input {
+  background: #0a0d12;
+  border: 1px solid #1e2530;
+  color: #e8eaf0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  width: 100%;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.95rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.auth-input::placeholder { color: #4a5568; }
+
+.auth-input:focus {
+  border-color: rgba(245,196,0,0.5);
+  box-shadow: 0 0 0 3px rgba(245,196,0,0.08);
+}
+
+.auth-input.error {
+  border-color: rgba(239,68,68,0.5);
+}
+
+/* ── Print stylesheet ────────────────────────────────────────────────────── */
+@media print {
+  body {
+    background: white;
+    font-size: 11pt;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+    break-inside: avoid;
+  }
+
+  nav,
+  header,
+  .topbar,
+  button {
+    display: none !important;
+  }
+
+  .print-full-width {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
