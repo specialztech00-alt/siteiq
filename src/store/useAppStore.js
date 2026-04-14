@@ -33,6 +33,8 @@ const useAppStore = create((set, get) => ({
 
   // ── Report ────────────────────────────────────────────────────────────────
   reportData: null,
+  analysisId: null,
+  projectInfo: { projectName: '', company: '', siteLocation: '', siteManager: '' },
 
   // ── Loading ───────────────────────────────────────────────────────────────
   isLoading: false,
@@ -45,6 +47,8 @@ const useAppStore = create((set, get) => ({
 
   // ── UI ────────────────────────────────────────────────────────────────────
   activeTab: 0,
+  theme: localStorage.getItem('siteiq-theme') || 'dark',
+  selectedState: localStorage.getItem('siteiq-state') || 'Lagos',
 
   // ── Actions ───────────────────────────────────────────────────────────────
   setPhotoFile: (file) => set({ photoFile: file }),
@@ -52,7 +56,20 @@ const useAppStore = create((set, get) => ({
   setDocText: (text) => set({ docText: text }),
   setSiteDescription: (text) => set({ siteDescription: text }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  toggleTheme: () => set(state => {
+    const next = state.theme === 'dark' ? 'light' : 'dark'
+    localStorage.setItem('siteiq-theme', next)
+    document.documentElement.setAttribute('data-theme', next)
+    return { theme: next }
+  }),
+
+  setSelectedState: (stateName) => set(() => {
+    localStorage.setItem('siteiq-state', stateName)
+    return { selectedState: stateName }
+  }),
   setReportData: (data) => set({ reportData: data }),
+  setProjectInfo: (info) => set((state) => ({ projectInfo: { ...state.projectInfo, ...info } })),
 
   clearAll: () => set({
     photoFile: null,
@@ -62,6 +79,8 @@ const useAppStore = create((set, get) => ({
     nerEntities: [],
     hfDetections: [],
     reportData: null,
+    analysisId: null,
+    projectInfo: { projectName: '', company: '', siteLocation: '', siteManager: '' },
     isLoading: false,
     loadingStep: 0,
     loadingError: null,
@@ -98,7 +117,8 @@ const useAppStore = create((set, get) => ({
       return false
     }
 
-    set({ isLoading: true, loadingStep: 0, loadingError: null, reportData: null })
+    const analysisId = 'SITEIQ-' + Math.random().toString(36).toUpperCase().slice(2, 8)
+    set({ isLoading: true, loadingStep: 0, loadingError: null, reportData: null, analysisId })
 
     let hfDetections = []
     let docText = existingDocText

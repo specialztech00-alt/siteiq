@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TopBar from '../components/TopBar.jsx'
 import ScoreStrip from '../components/ScoreStrip.jsx'
@@ -235,18 +236,101 @@ function PMActionsTab({ report }) {
 
 // ── Main report page ─────────────────────────────────────────────────────────
 
+function formatTimestamp(date) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const d = date.getDate()
+  const suffix = d === 1 || d === 21 || d === 31 ? 'st' : d === 2 || d === 22 ? 'nd' : d === 3 || d === 23 ? 'rd' : 'th'
+  const h = date.getHours()
+  const m = date.getMinutes().toString().padStart(2, '0')
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return `${days[date.getDay()]} ${d}${suffix} ${months[date.getMonth()]} ${date.getFullYear()} · ${h12}:${m} ${ampm}`
+}
+
+function ShareToast({ show }) {
+  return (
+    <div
+      className={[
+        'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-gray-900 border border-gray-700 text-white text-sm px-4 py-3 rounded-xl shadow-xl transition-all duration-300',
+        show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none',
+      ].join(' ')}
+    >
+      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+      Report link copied to clipboard
+    </div>
+  )
+}
+
+function ProjectInfoForm({ projectInfo, setProjectInfo }) {
+  const fields = [
+    { key: 'projectName', label: 'Project name', placeholder: 'e.g. Block C Foundation Works' },
+    { key: 'company', label: 'Company', placeholder: 'e.g. Ace Contractors Ltd' },
+    { key: 'siteLocation', label: 'Site location', placeholder: 'e.g. Victoria Island, Lagos' },
+    { key: 'siteManager', label: 'Site manager', placeholder: 'e.g. J. Okafor' },
+  ]
+  return (
+    <div className="print-project-info bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Project Information</p>
+      <div className="grid grid-cols-2 gap-3">
+        {fields.map(({ key, label, placeholder }) => (
+          <div key={key}>
+            <label className="block text-xs text-gray-500 mb-1">{label}</label>
+            <input
+              type="text"
+              value={projectInfo[key]}
+              onChange={e => setProjectInfo({ [key]: e.target.value })}
+              placeholder={placeholder}
+              className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow focus:ring-1 focus:ring-yellow/30 no-print"
+            />
+            <span className="hidden print-only text-sm text-gray-800">{projectInfo[key] || '—'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function ReportPage() {
   const navigate = useNavigate()
   const reportData = useAppStore(s => s.reportData)
   const activeTab = useAppStore(s => s.activeTab)
   const setActiveTab = useAppStore(s => s.setActiveTab)
+  const projectInfo = useAppStore(s => s.projectInfo)
+  const setProjectInfo = useAppStore(s => s.setProjectInfo)
+  const analysisId = useAppStore(s => s.analysisId)
+  const [showToast, setShowToast] = useState(false)
+  const [generatedAt] = useState(() => new Date())
 
-  if (!reportData) {
-    navigate('/')
-    return null
-  }
+  useEffect(() => {
+    if (!reportData) navigate('/')
+  }, [reportData, navigate])
+
+  if (!reportData) return null
 
   const isFallback = reportData._isFallback
+  const displayId = analysisId ?? ('SITEIQ-' + Math.random().toString(36).toUpperCase().slice(2, 8))
+
+  function handleShare() {
+    const text = [
+      `SiteIQ Analysis Report`,
+      `ID: ${displayId}`,
+      `Generated: ${formatTimestamp(generatedAt)}`,
+      projectInfo.projectName && `Project: ${projectInfo.projectName}`,
+      projectInfo.company && `Company: ${projectInfo.company}`,
+      ``,
+      `Safety Score: ${reportData.safetyScore ?? 'N/A'}/100`,
+      `Risks: ${reportData.riskCount?.high ?? 0} High, ${reportData.riskCount?.medium ?? 0} Medium, ${reportData.riskCount?.low ?? 0} Low`,
+      ``,
+      window.location.href,
+    ].filter(Boolean).join('\n')
+
+    navigator.clipboard.writeText(text).catch(() => {})
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3000)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -255,20 +339,38 @@ export default function ReportPage() {
       {/* Report title bar */}
       <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 no-print">
         <div className="max-w-5xl mx-auto">
+          {/* Project info form */}
+          <ProjectInfoForm projectInfo={projectInfo} setProjectInfo={setProjectInfo} />
+
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="font-heading font-bold text-xl sm:text-2xl text-gray-900 leading-tight">
                 {reportData.reportTitle}
               </h1>
               <p className="text-xs text-gray-400 mt-1 font-mono-clause">
-                Generated {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                Generated: {formatTimestamp(generatedAt)}
+              </p>
+              <p className="text-xs text-gray-300 mt-0.5 font-mono-clause">
+                {displayId}
               </p>
             </div>
-            {isFallback && (
-              <span className="flex-shrink-0 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-lg font-medium">
-                Demo mode
-              </span>
-            )}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {isFallback && (
+                <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-lg font-medium">
+                  Demo mode
+                </span>
+              )}
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 text-xs border border-gray-200 hover:border-gray-400 text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                title="Copy report summary to clipboard"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share
+              </button>
+            </div>
           </div>
 
           {/* Risk count summary */}
@@ -298,6 +400,8 @@ export default function ReportPage() {
           </div>
         </div>
       </div>
+
+      <ShareToast show={showToast} />
 
       {/* Tab navigation */}
       <div className="bg-white border-b border-gray-200 sticky top-14 z-40 no-print">

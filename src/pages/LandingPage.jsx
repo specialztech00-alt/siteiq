@@ -435,6 +435,94 @@ function HowItWorksSection() {
   )
 }
 
+// ── DEMO VIDEO ────────────────────────────────────────────────────────────────
+
+function DemoVideoSection() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <section className="py-24 px-5 sm:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10 fade-in-up">
+          <SectionLabel>See It In Action</SectionLabel>
+          <h2 className="font-heading font-bold text-white" style={{ fontSize: 'clamp(28px, 4vw, 48px)', lineHeight: 1.1 }}>
+            Watch SiteIQ analyse a live site<br />
+            <span className="text-gradient">in under 60 seconds</span>
+          </h2>
+        </div>
+
+        {/* Video thumbnail */}
+        <div
+          className="relative overflow-hidden rounded-2xl cursor-pointer group fade-in-up"
+          style={{ border: '1px solid #1e2530' }}
+          onClick={() => setOpen(true)}
+        >
+          <div className="aspect-video bg-gray-900 relative">
+            <img
+              src="/images/site-workers.jpg"
+              alt="SiteIQ demo video thumbnail"
+              className="w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-300"
+              onError={e => { e.target.style.display = 'none' }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-950/70 via-gray-950/20 to-transparent" />
+
+            {/* Play button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                style={{ background: 'rgba(245,196,0,0.15)', border: '2px solid rgba(245,196,0,0.5)', backdropFilter: 'blur(8px)' }}>
+                <svg className="w-8 h-8 text-yellow-400 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Caption */}
+            <div className="absolute bottom-0 left-0 right-0 p-5">
+              <p className="text-white font-heading font-bold text-lg">2-minute product walkthrough</p>
+              <p className="text-gray-400 text-sm">Upload → Analyse → Action plan</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* YouTube modal */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="aspect-video bg-gray-950 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'rgba(245,196,0,0.1)', border: '1px solid rgba(245,196,0,0.2)' }}>
+                  <svg className="w-7 h-7 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 19.5m9.75-9.75c0 .621-.504 1.125-1.125 1.125H18.75a1.125 1.125 0 01-1.125-1.125v-1.5A1.125 1.125 0 0118.75 9h1.875c.621 0 1.125.504 1.125 1.125v1.5z" />
+                  </svg>
+                </div>
+                <p className="text-white font-heading font-bold text-xl mb-2">Demo video coming soon</p>
+                <p className="text-gray-500 text-sm">Try the live demo by clicking "Get started free"</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ── FEATURES ──────────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -754,6 +842,298 @@ function PricingSection() {
   )
 }
 
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+
+const FAQ_ITEMS = [
+  {
+    q: 'What types of construction contracts does SiteIQ support?',
+    a: 'SiteIQ works with any construction contract in text form — JCT, NEC4, FIDIC, JBCC, UAE FIDIC, bespoke EPC, and more. Upload a PDF or paste text directly. Our AI understands contract structure regardless of the standard used.',
+  },
+  {
+    q: 'How accurate is the AI hazard detection?',
+    a: 'SiteIQ uses Claude AI for semantic hazard analysis and computer vision (DETR object detection) for physical site elements. Accuracy is high for common hazards like missing PPE, fall risks, and CDM violations. All output should be reviewed by a qualified safety professional — SiteIQ is a decision-support tool, not a replacement for expert assessment.',
+  },
+  {
+    q: 'Is my contract data kept private?',
+    a: 'Your contract text and site photos are sent to Claude AI for analysis and are not stored on SiteIQ servers. Anthropic\'s data usage policies apply to API calls. We recommend anonymising sensitive commercial data before upload for maximum privacy.',
+  },
+  {
+    q: 'Can I use SiteIQ on a mobile device on-site?',
+    a: 'Yes. SiteIQ is fully responsive and works on any modern smartphone. You can take a photo directly on-site and upload it instantly for analysis. Results are optimised for small screens.',
+  },
+  {
+    q: 'What happens if the AI analysis takes too long or fails?',
+    a: 'SiteIQ has a built-in fallback system. If the Claude API is unavailable, you\'ll receive a realistic demo report so you can evaluate the product. When the API is available, analysis typically completes in 20–40 seconds.',
+  },
+  {
+    q: 'Does SiteIQ provide legal advice?',
+    a: 'No. SiteIQ provides AI-generated analysis for informational purposes only. Nothing in the output constitutes legal advice. Always consult a qualified construction lawyer for formal contract advice and a certified HSE professional for safety-critical decisions.',
+  },
+  {
+    q: 'How do I export or share my report?',
+    a: 'Use the Export button on the report page to print or save as PDF — it includes a branded print layout with your project info. Use the Share button to copy a summary to your clipboard for pasting into WhatsApp, email, or a project management tool.',
+  },
+  {
+    q: 'Is there a free plan? What are the limits?',
+    a: 'Yes — the Free plan includes 5 site analyses and 3 contract analyses per month with no credit card required. Upgrade to Pro ($29/month) for unlimited analyses, contract Q&A chat, and prescriptive PM actions.',
+  },
+]
+
+function FAQSection() {
+  const [openIdx, setOpenIdx] = useState(null)
+
+  function toggle(i) {
+    setOpenIdx(prev => prev === i ? null : i)
+  }
+
+  return (
+    <section className="py-24 px-5 sm:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-14 fade-in-up">
+          <SectionLabel>FAQ</SectionLabel>
+          <h2 className="font-heading font-bold text-white" style={{ fontSize: 'clamp(28px, 4vw, 48px)', lineHeight: 1.1 }}>
+            Frequently asked questions
+          </h2>
+        </div>
+
+        <div className="space-y-2 fade-in-up">
+          {FAQ_ITEMS.map((item, i) => {
+            const isOpen = openIdx === i
+            return (
+              <div
+                key={i}
+                className="rounded-xl overflow-hidden transition-all duration-200"
+                style={{ background: '#0f1218', border: isOpen ? '1px solid rgba(245,196,0,0.25)' : '1px solid #1e2530' }}
+              >
+                <button
+                  onClick={() => toggle(i)}
+                  className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left"
+                >
+                  <span className={['text-sm font-semibold transition-colors', isOpen ? 'text-yellow-400' : 'text-gray-200'].join(' ')}>
+                    {item.q}
+                  </span>
+                  <svg
+                    className={['w-4 h-4 flex-shrink-0 text-gray-500 transition-transform duration-200', isOpen ? 'rotate-45' : ''].join(' ')}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+
+                <div
+                  className="overflow-hidden transition-all duration-300"
+                  style={{ maxHeight: isOpen ? '400px' : '0' }}
+                >
+                  <div
+                    className="px-6 pb-5 text-sm leading-relaxed"
+                    style={{ color: '#6b7280', borderLeft: '3px solid rgba(245,196,0,0.4)' }}
+                  >
+                    {item.a}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── CONTACT ───────────────────────────────────────────────────────────────────
+
+function ContactSection() {
+  const [sent, setSent] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    setSent(true)
+  }
+
+  return (
+    <section className="py-24 px-5 sm:px-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-12 fade-in-up">
+          <SectionLabel>Get In Touch</SectionLabel>
+          <h2 className="font-heading font-bold text-white" style={{ fontSize: 'clamp(28px, 4vw, 48px)', lineHeight: 1.1 }}>
+            Questions or feedback?<br />
+            <span className="text-gradient">We'd love to hear from you.</span>
+          </h2>
+        </div>
+
+        <div className="dark-card p-8 fade-in-up">
+          {sent ? (
+            <div className="text-center py-8">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
+                <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-white font-heading font-bold text-xl mb-2">Message sent!</p>
+              <p className="text-gray-500 text-sm">We'll get back to you at <span className="text-yellow-400">{form.email}</span> within 24 hours.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Your name"
+                    className="auth-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="you@company.com"
+                    className="auth-input"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Message</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={form.message}
+                  onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                  placeholder="Tell us about your project or ask a question..."
+                  className="auth-input resize-none"
+                />
+              </div>
+              <button type="submit" className="btn-yellow w-full py-3 rounded-xl text-sm">
+                Send message
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── COOKIE BANNER ─────────────────────────────────────────────────────────────
+
+function CookieBanner() {
+  const [visible, setVisible] = useState(false)
+  const [showPrefs, setShowPrefs] = useState(false)
+  const [prefs, setPrefs] = useState({ analytics: true, marketing: false })
+
+  useEffect(() => {
+    const consent = localStorage.getItem('siteiq-cookie-consent')
+    if (!consent) setVisible(true)
+  }, [])
+
+  function acceptAll() {
+    localStorage.setItem('siteiq-cookie-consent', JSON.stringify({ analytics: true, marketing: true, timestamp: Date.now() }))
+    setVisible(false)
+  }
+
+  function savePrefs() {
+    localStorage.setItem('siteiq-cookie-consent', JSON.stringify({ ...prefs, timestamp: Date.now() }))
+    setVisible(false)
+    setShowPrefs(false)
+  }
+
+  if (!visible) return null
+
+  return (
+    <>
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 sm:px-6">
+        <div className="max-w-4xl mx-auto rounded-2xl p-5 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          style={{ background: '#0f1218', border: '1px solid #1e2530' }}>
+          <div className="flex-1">
+            <p className="text-sm text-gray-300 leading-relaxed">
+              We use cookies to improve your experience and analyse usage.{' '}
+              <button onClick={() => setShowPrefs(true)} className="text-yellow-400 hover:text-yellow-300 underline underline-offset-2">
+                Manage preferences
+              </button>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowPrefs(true)}
+              className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-lg transition-colors"
+            >
+              Manage
+            </button>
+            <button
+              onClick={acceptAll}
+              className="btn-yellow text-xs px-4 py-2 rounded-lg"
+            >
+              Accept all
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showPrefs && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowPrefs(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-6 shadow-2xl"
+            style={{ background: '#0f1218', border: '1px solid #1e2530' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="font-heading font-bold text-white text-xl mb-5">Cookie preferences</h3>
+
+            {[
+              { key: 'essential', label: 'Essential cookies', desc: 'Required for the site to function. Cannot be disabled.', locked: true },
+              { key: 'analytics', label: 'Analytics cookies', desc: 'Help us understand how visitors use SiteIQ.', locked: false },
+              { key: 'marketing', label: 'Marketing cookies', desc: 'Used to show relevant ads and promotions.', locked: false },
+            ].map(({ key, label, desc, locked }) => (
+              <div key={key} className="flex items-start justify-between gap-4 py-3 border-b border-gray-800 last:border-0">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-white">{label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                </div>
+                <button
+                  onClick={() => !locked && setPrefs(p => ({ ...p, [key]: !p[key] }))}
+                  className={[
+                    'flex-shrink-0 w-10 h-6 rounded-full transition-colors relative mt-0.5',
+                    locked ? 'bg-yellow/30 cursor-not-allowed' :
+                    (key === 'essential' || prefs[key]) ? 'bg-yellow' : 'bg-gray-700',
+                  ].join(' ')}
+                  disabled={locked}
+                >
+                  <span
+                    className={[
+                      'absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform',
+                      (locked || (key !== 'essential' && !prefs[key])) ? 'left-1' : 'left-5',
+                    ].join(' ')}
+                  />
+                </button>
+              </div>
+            ))}
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowPrefs(false)} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 border border-gray-700 hover:border-gray-500 transition-colors">
+                Cancel
+              </button>
+              <button onClick={savePrefs} className="flex-1 btn-yellow py-2.5 rounded-xl text-sm">
+                Save preferences
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 // ── FINAL CTA ─────────────────────────────────────────────────────────────────
 
 function FinalCTASection() {
@@ -820,6 +1200,11 @@ function Footer() {
               {['About', 'Mission', 'Blog', 'Careers'].map(l => (
                 <li key={l}><a href="#" className="text-sm text-gray-500 hover:text-gray-300 transition-colors">{l}</a></li>
               ))}
+              <li>
+                <a href="mailto:hello@siteiq.ai" className="text-sm text-gray-500 hover:text-yellow-400 transition-colors">
+                  hello@siteiq.ai
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -878,14 +1263,21 @@ export default function LandingPage() {
       <SectionDivider />
       <HowItWorksSection />
       <SectionDivider />
+      <DemoVideoSection />
+      <SectionDivider />
       <FeaturesSection />
       <SectionDivider />
       <SocialProofSection />
       <SectionDivider />
       <PricingSection />
       <SectionDivider />
+      <FAQSection />
+      <SectionDivider />
+      <ContactSection />
+      <SectionDivider />
       <FinalCTASection />
       <Footer />
+      <CookieBanner />
     </div>
   )
 }

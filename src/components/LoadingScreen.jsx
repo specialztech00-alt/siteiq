@@ -1,10 +1,52 @@
+import { useState, useEffect } from 'react'
 import { LOADING_STEPS } from '../store/useAppStore.js'
 
+const STEP_ATTRIBUTION = [
+  null,
+  'Hugging Face · facebook/detr-resnet-50',
+  'pdfjs-dist · local extraction',
+  'Hugging Face · dslim/bert-base-NER',
+  'Claude · claude-sonnet-4-20250514',
+  'Claude · claude-sonnet-4-20250514',
+  'Claude · claude-sonnet-4-20250514',
+  null,
+]
+
+function getCountdownMessage(seconds) {
+  if (seconds > 20) return 'Running AI analysis — this takes about 30 seconds...'
+  if (seconds > 10) return 'Claude is reading your contract and site conditions...'
+  if (seconds > 5) return 'Building your risk register and action plan...'
+  if (seconds > 0) return 'Almost there — assembling your report...'
+  return 'Taking a little longer than usual — still working...'
+}
+
 export default function LoadingScreen({ currentStep }) {
+  const [secondsLeft, setSecondsLeft] = useState(30)
+  const [overtime, setOvertime] = useState(false)
+
+  useEffect(() => {
+    setSecondsLeft(30)
+    setOvertime(false)
+    const interval = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev <= 1) {
+          setOvertime(true)
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const progress = Math.round((currentStep / (LOADING_STEPS.length - 1)) * 100)
+  const attribution = STEP_ATTRIBUTION[currentStep]
+
   return (
     <div className="fixed inset-0 bg-navy z-50 flex flex-col items-center justify-center px-6">
       {/* Logo */}
-      <div className="mb-10 text-center">
+      <div className="mb-8 text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
           <svg viewBox="0 0 32 32" fill="none" className="w-10 h-10">
             <rect x="4" y="20" width="24" height="4" rx="2" fill="#f5c400" />
@@ -18,19 +60,44 @@ export default function LoadingScreen({ currentStep }) {
         <p className="text-gray-400 text-sm tracking-widest uppercase">Analysing your site &amp; contract</p>
       </div>
 
+      {/* Progress bar */}
+      <div className="w-full max-w-sm mb-2">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs text-gray-500">Progress</span>
+          <span className="text-xs font-mono text-yellow font-bold">{progress}%</span>
+        </div>
+        <div className="h-2 bg-navy-700 rounded-full overflow-hidden border border-navy-600">
+          <div
+            className="h-full bg-yellow rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Countdown timer */}
+      <div className="w-full max-w-sm mb-6 flex items-center justify-between">
+        <p className="text-xs text-gray-500 flex-1 pr-4">{getCountdownMessage(secondsLeft)}</p>
+        <div className={[
+          'flex-shrink-0 font-mono font-bold text-sm tabular-nums px-2.5 py-1 rounded-lg',
+          overtime ? 'text-amber-400 bg-amber-400/10' : 'text-gray-400 bg-navy-700',
+        ].join(' ')}>
+          {overtime ? '—' : `${secondsLeft}s`}
+        </div>
+      </div>
+
       {/* Spinning indicator */}
-      <div className="relative w-16 h-16 mb-8">
+      <div className="relative w-14 h-14 mb-6">
         <div className="absolute inset-0 rounded-full border-4 border-navy-700 opacity-30" />
         <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-yellow spin-slow" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-yellow font-heading font-bold text-lg">
+          <span className="text-yellow font-heading font-bold text-base">
             {currentStep + 1}
           </span>
         </div>
       </div>
 
       {/* Steps */}
-      <div className="w-full max-w-sm space-y-2">
+      <div className="w-full max-w-sm space-y-1.5">
         {LOADING_STEPS.map((step, i) => {
           const isDone = i < currentStep
           const isActive = i === currentStep
@@ -40,10 +107,10 @@ export default function LoadingScreen({ currentStep }) {
             <div
               key={step}
               className={[
-                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300',
+                'flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300',
                 isActive ? 'bg-navy-700 border border-yellow/30' : '',
                 isDone ? 'opacity-60' : '',
-                isPending ? 'opacity-25' : '',
+                isPending ? 'opacity-20' : '',
               ].join(' ')}
             >
               {/* Status icon */}
@@ -59,20 +126,25 @@ export default function LoadingScreen({ currentStep }) {
                 )}
               </div>
 
-              {/* Label */}
-              <span className={[
-                'text-sm font-medium',
-                isActive ? 'text-yellow' : isDone ? 'text-green-400' : 'text-gray-500',
-              ].join(' ')}>
-                {step}
-              </span>
+              {/* Label + attribution */}
+              <div className="flex-1 min-w-0">
+                <span className={[
+                  'text-sm font-medium',
+                  isActive ? 'text-yellow' : isDone ? 'text-green-400' : 'text-gray-500',
+                ].join(' ')}>
+                  {step}
+                </span>
+                {isActive && STEP_ATTRIBUTION[i] && (
+                  <p className="text-xs text-gray-600 mt-0.5 truncate font-mono">{STEP_ATTRIBUTION[i]}</p>
+                )}
+              </div>
             </div>
           )
         })}
       </div>
 
       {/* Claude attribution */}
-      <div className="mt-10 flex items-center gap-2 text-xs text-gray-600">
+      <div className="mt-8 flex items-center gap-2 text-xs text-gray-600">
         <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
         </svg>
