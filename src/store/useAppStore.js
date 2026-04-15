@@ -35,6 +35,11 @@ const useAppStore = create((set, get) => ({
   reportData: null,
   analysisId: null,
   projectInfo: { projectName: '', company: '', siteLocation: '', siteManager: '' },
+  analyses: [],
+
+  // ── Assistant conversations ───────────────────────────────────────────────
+  conversations: [],
+  activeConversationId: null,
 
   // ── Loading ───────────────────────────────────────────────────────────────
   isLoading: false,
@@ -69,7 +74,30 @@ const useAppStore = create((set, get) => ({
     return { selectedState: stateName }
   }),
   setReportData: (data) => set({ reportData: data }),
+  setAnalysisId: (id) => set({ analysisId: id }),
   setProjectInfo: (info) => set((state) => ({ projectInfo: { ...state.projectInfo, ...info } })),
+  addAnalysis: (analysis) => set((state) => ({
+    analyses: [analysis, ...state.analyses].slice(0, 50),
+  })),
+  removeAnalysis: (id) => set((state) => ({
+    analyses: state.analyses.filter(a => a.id !== id),
+  })),
+
+  // ── Conversation actions ──────────────────────────────────────────────────
+  setActiveConversationId: (id) => set({ activeConversationId: id }),
+  addConversation: (conv) => set((state) => ({
+    conversations: [conv, ...state.conversations],
+    activeConversationId: conv.id,
+  })),
+  updateConversation: (id, updates) => set((state) => ({
+    conversations: state.conversations.map(c => c.id === id ? { ...c, ...updates } : c),
+  })),
+  deleteConversation: (id) => set((state) => ({
+    conversations: state.conversations.filter(c => c.id !== id),
+    activeConversationId: state.activeConversationId === id
+      ? (state.conversations.find(c => c.id !== id)?.id ?? null)
+      : state.activeConversationId,
+  })),
 
   clearAll: () => set({
     photoFile: null,

@@ -3,7 +3,14 @@ import LandingPage from './pages/LandingPage.jsx'
 import SignInPage from './pages/SignInPage.jsx'
 import SignUpPage from './pages/SignUpPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
+import NewAnalysisPage from './pages/NewAnalysisPage.jsx'
 import PlaceholderPage from './pages/PlaceholderPage.jsx'
+import ArchivePage from './pages/ArchivePage.jsx'
+import WeatherPage from './pages/WeatherPage.jsx'
+import GeoPage from './pages/GeoPage.jsx'
+import AssistantPage from './pages/AssistantPage.jsx'
+import FloatingChat from './components/FloatingChat.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import AppShell from './components/AppShell.jsx'
 
@@ -11,6 +18,7 @@ import AppShell from './components/AppShell.jsx'
 const AppLayout = ({ children }) => (
   <AuthGuard>
     <AppShell>{children}</AppShell>
+    <FloatingChat />
   </AuthGuard>
 )
 
@@ -28,13 +36,13 @@ export default function App() {
 
         {/* ── Workspace ───────────────────────────────── */}
         <Route path="/app/dashboard" element={
-          <AppLayout><PlaceholderPage title="Dashboard" /></AppLayout>
+          <AppLayout><DashboardPage /></AppLayout>
         }/>
         <Route path="/app/new-analysis" element={
-          <AppLayout><PlaceholderPage title="New Analysis" /></AppLayout>
+          <AppLayout><NewAnalysisPage /></AppLayout>
         }/>
         <Route path="/app/archive" element={
-          <AppLayout><PlaceholderPage title="Project Archive" /></AppLayout>
+          <AppLayout><ArchivePage /></AppLayout>
         }/>
         <Route path="/app/report" element={
           <AppLayout><ReportPage /></AppLayout>
@@ -48,7 +56,7 @@ export default function App() {
           <AppLayout><PlaceholderPage title="Contract Analyser" /></AppLayout>
         }/>
         <Route path="/app/assistant" element={
-          <AppLayout><PlaceholderPage title="AI Assistant" /></AppLayout>
+          <AppLayout><AssistantPage /></AppLayout>
         }/>
         <Route path="/app/risks" element={
           <AppLayout><PlaceholderPage title="Risk Register" /></AppLayout>
@@ -56,10 +64,10 @@ export default function App() {
 
         {/* ── Location ─────────────────────────────────── */}
         <Route path="/app/weather" element={
-          <AppLayout><PlaceholderPage title="Site Weather" /></AppLayout>
+          <AppLayout><WeatherPage /></AppLayout>
         }/>
         <Route path="/app/geo" element={
-          <AppLayout><PlaceholderPage title="Geo Intelligence" /></AppLayout>
+          <AppLayout><GeoPage /></AppLayout>
         }/>
         <Route path="/app/regional" element={
           <AppLayout><PlaceholderPage title="Regional Risks" /></AppLayout>
