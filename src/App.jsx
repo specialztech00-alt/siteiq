@@ -5,11 +5,17 @@ import SignUpPage from './pages/SignUpPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import NewAnalysisPage from './pages/NewAnalysisPage.jsx'
-import PlaceholderPage from './pages/PlaceholderPage.jsx'
 import ArchivePage from './pages/ArchivePage.jsx'
 import WeatherPage from './pages/WeatherPage.jsx'
 import GeoPage from './pages/GeoPage.jsx'
 import AssistantPage from './pages/AssistantPage.jsx'
+import RiskRegisterPage from './pages/RiskRegisterPage.jsx'
+import SafetyPage from './pages/SafetyPage.jsx'
+import ContractPage from './pages/ContractPage.jsx'
+import RegionalPage from './pages/RegionalPage.jsx'
+import ProfilePage from './pages/ProfilePage.jsx'
+import SettingsPage from './pages/SettingsPage.jsx'
+import HelpPage from './pages/HelpPage.jsx'
 import FloatingChat from './components/FloatingChat.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import AppShell from './components/AppShell.jsx'
@@ -50,16 +56,16 @@ export default function App() {
 
         {/* ── Intelligence ─────────────────────────────── */}
         <Route path="/app/safety" element={
-          <AppLayout><PlaceholderPage title="Safety Monitor" /></AppLayout>
+          <AppLayout><SafetyPage /></AppLayout>
         }/>
         <Route path="/app/contract" element={
-          <AppLayout><PlaceholderPage title="Contract Analyser" /></AppLayout>
+          <AppLayout><ContractPage /></AppLayout>
         }/>
         <Route path="/app/assistant" element={
           <AppLayout><AssistantPage /></AppLayout>
         }/>
         <Route path="/app/risks" element={
-          <AppLayout><PlaceholderPage title="Risk Register" /></AppLayout>
+          <AppLayout><RiskRegisterPage /></AppLayout>
         }/>
 
         {/* ── Location ─────────────────────────────────── */}
@@ -70,18 +76,18 @@ export default function App() {
           <AppLayout><GeoPage /></AppLayout>
         }/>
         <Route path="/app/regional" element={
-          <AppLayout><PlaceholderPage title="Regional Risks" /></AppLayout>
+          <AppLayout><RegionalPage /></AppLayout>
         }/>
 
         {/* ── Account ──────────────────────────────────── */}
         <Route path="/app/profile" element={
-          <AppLayout><PlaceholderPage title="Profile" /></AppLayout>
+          <AppLayout><ProfilePage /></AppLayout>
         }/>
         <Route path="/app/settings" element={
-          <AppLayout><PlaceholderPage title="Settings" /></AppLayout>
+          <AppLayout><SettingsPage /></AppLayout>
         }/>
         <Route path="/app/help" element={
-          <AppLayout><PlaceholderPage title="Help & Docs" /></AppLayout>
+          <AppLayout><HelpPage /></AppLayout>
         }/>
 
         {/* ── Catch-all ────────────────────────────────── */}

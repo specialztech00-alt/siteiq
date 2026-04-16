@@ -510,7 +510,7 @@ export default function AssistantPage() {
 
       const aiMsg = { id: newId(), role: 'assistant', content, timestamp: new Date().toISOString(), followUps }
       updateConversation(conv.id, {
-        messages: [...conv.messages, userMsg, aiMsg],
+        messages: [...conv.messages, aiMsg],
         updatedAt: aiMsg.timestamp,
       })
     } catch (err) {
@@ -521,7 +521,7 @@ export default function AssistantPage() {
         followUps: [],
       }
       updateConversation(conv.id, {
-        messages: [...conv.messages, userMsg, errMsg],
+        messages: [...conv.messages, errMsg],
         updatedAt: errMsg.timestamp,
       })
     } finally {

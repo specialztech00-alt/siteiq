@@ -264,7 +264,7 @@ body {
   margin-bottom: 8px;
 }
 
-/* ── GRID PATTERN (hero backgrounds) ── */
+/* ── GRID PATTERN (app page backgrounds) ── */
 .grid-pattern {
   background-image:
     linear-gradient(var(--border) 1px,
@@ -273,7 +273,6 @@ body {
                     var(--border) 1px,
                     transparent 1px);
   background-size: 40px 40px;
-  opacity: 0.3;
 }
 
 /* ── GLOW ── */
