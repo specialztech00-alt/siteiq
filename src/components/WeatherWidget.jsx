@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Thermometer, AlertTriangle } from 'lucide-react'
 import useAppStore from '../store/useAppStore.js'
 import { getStateByName, getStateNames } from '../data/nigeriaStates.js'
 import {
@@ -133,9 +134,9 @@ export default function WeatherWidget() {
       title={`Weather: ${selectedState}`}
     >
       {loading ? (
-        <span style={{ fontSize: '14px' }}>🌡️</span>
+        <Thermometer size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
       ) : error ? (
-        <span style={{ fontSize: '14px' }}>⚠️</span>
+        <AlertTriangle size={14} style={{ color: 'var(--warning)', flexShrink: 0 }} />
       ) : (
         <>
           <span style={{ fontSize: '14px' }}>{getWeatherIcon(weather.weathercode)}</span>
@@ -243,9 +244,10 @@ export default function WeatherWidget() {
               background: safetyBg(safety.rating),
               marginBottom: safety.alerts.length > 0 ? '8px' : '12px',
             }}>
-              <span style={{ fontSize: '14px' }}>
-                {safety.rating === 'Danger' ? '🔴' : safety.rating === 'Caution' ? '🟡' : '🟢'}
-              </span>
+              <span style={{
+                display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                background: safetyColor(safety.rating),
+              }} />
               <div>
                 <p style={{ fontSize: '12px', fontWeight: 600, color: safetyColor(safety.rating) }}>
                   {safetyLabel(safety.rating)}

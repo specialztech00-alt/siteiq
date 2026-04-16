@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { HardHat, Send, Plus } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 import { chatWithAssistant, parseFollowUps, cleanResponseText } from '../lib/assistantApi'
 
@@ -44,32 +45,19 @@ function renderAIContent(text) {
   })
 }
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
+// ── Icons are imported from lucide-react above ────────────────────────────────
 
+// Alias for consistent usage in this file
 function HardhatIcon({ size = 24, color = 'currentColor' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M12 3C8.1 3 5 6.1 5 10v1H4a1 1 0 000 2h1v1h14v-1h1a1 1 0 000-2h-1v-1c0-3.9-3.1-7-7-7zm0 2c2.8 0 5 2.2 5 5v1H7v-1c0-2.8 2.2-5 5-5z" />
-      <rect x="3" y="15" width="18" height="3" rx="1.5" />
-    </svg>
-  )
+  return <HardHat size={size} color={color} />
 }
 
 function SendIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M2 8l10-6-3 6 3 6L2 8z" fill="currentColor" />
-    </svg>
-  )
+  return <Send size={16} />
 }
 
 function PlusIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <line x1="7" y1="2" x2="7" y2="12" />
-      <line x1="2" y1="7" x2="12" y2="7" />
-    </svg>
-  )
+  return <Plus size={14} strokeWidth={2.5} />
 }
 
 // ── Typing indicator ──────────────────────────────────────────────────────────
@@ -207,10 +195,10 @@ function EmptyState({ onStart }) {
         fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700,
         color: 'var(--text-primary)', margin: '0 0 10px',
       }}>
-        SiteIQ Construction Assistant
+        Site Intelligence
       </h2>
       <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '0 0 28px', lineHeight: 1.6, maxWidth: '420px' }}>
-        Ask me anything about construction safety, contracts, regulations, or site management in Nigeria
+        Ask about safety regulations, contract obligations, site conditions, or construction risk — specific to Nigerian standards and context.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', maxWidth: '520px' }}>
         {STARTERS.map(q => (
@@ -221,7 +209,7 @@ function EmptyState({ onStart }) {
             textAlign: 'left',
           }}
             onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = ''}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
           >
             {q}
           </div>
@@ -440,7 +428,7 @@ function ChatPanel({ conversation, isTyping, onSend, onClear, onTitleChange }) {
           value={input}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about safety, contracts, regulations..."
+          placeholder="Ask about safety regulations, contract clauses, site conditions..."
           rows={1}
           style={{
             flex: 1, resize: 'none', minHeight: '44px', maxHeight: '120px',

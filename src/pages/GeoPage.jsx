@@ -216,8 +216,8 @@ function SoilProfileDiagram({ soil }) {
           left: 0,
           right: 0,
           height: '2px',
-          background: '#3b82f6',
-          borderTop: '2px dashed #3b82f6',
+          background: 'var(--info)',
+          borderTop: '2px dashed var(--info)',
         }} />
         {/* Water table label */}
         <div style={{
@@ -226,7 +226,7 @@ function SoilProfileDiagram({ soil }) {
           right: '2px',
           transform: 'translateY(-100%)',
           fontSize: '7px',
-          color: '#3b82f6',
+          color: 'var(--info)',
           fontWeight: 700,
           background: 'rgba(0,0,0,0.5)',
           padding: '1px 2px',
@@ -242,7 +242,7 @@ function SoilProfileDiagram({ soil }) {
           { color: '#5C4033', label: 'Topsoil' },
           { color: midColor, label: soil.type?.split(' ').slice(0, 2).join(' ') || 'Subsoil' },
           { color: '#4A4A5A', label: 'Bedrock' },
-          { color: '#3b82f6', label: 'Water table', dashed: true },
+          { color: 'var(--info)', label: 'Water table', dashed: true },
         ].map(({ color, label, dashed }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div style={{
@@ -320,11 +320,11 @@ function GroundConditions({ state }) {
 // ── Construction risk profile ─────────────────────────────────────────────────
 
 const RISK_ROWS = [
-  { key: 'flood', label: 'Flood Risk', icon: '🌊' },
-  { key: 'erosion', label: 'Erosion Risk', icon: '🏔' },
-  { key: 'landslide', label: 'Landslide Risk', icon: '⛰' },
-  { key: 'extremeHeat', label: 'Extreme Heat', icon: '🌡' },
-  { key: 'harmattan', label: 'Harmattan Dust', icon: '💨' },
+  { key: 'flood',       label: 'Flood Risk',     icon: null },
+  { key: 'erosion',     label: 'Erosion Risk',   icon: null },
+  { key: 'landslide',   label: 'Landslide Risk', icon: null },
+  { key: 'extremeHeat', label: 'Extreme Heat',   icon: null },
+  { key: 'harmattan',   label: 'Harmattan Dust', icon: null },
 ]
 
 function RiskProfile({ state }) {
@@ -338,7 +338,6 @@ function RiskProfile({ state }) {
             <div key={key}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '16px' }}>{icon}</span>
                   <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{label}</span>
                 </div>
                 <span className={riskBadgeClass(level)}>{level}</span>
@@ -380,11 +379,11 @@ function SeasonalCalendar({ state }) {
           let bg, color, border
           if (isPeak) {
             bg = 'rgba(59,130,246,0.25)'
-            color = '#2563eb'
-            border = '1px solid #3b82f6'
+            color = 'var(--info)'
+            border = '1px solid var(--info)'
           } else if (inRainy) {
             bg = 'rgba(59,130,246,0.1)'
-            color = '#3b82f6'
+            color = 'var(--info)'
             border = '1px solid rgba(59,130,246,0.3)'
           } else {
             bg = 'rgba(217,119,6,0.1)'

@@ -11,36 +11,50 @@ export default function DemoScenarios({ activeId, onSelect }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>
           Demo scenarios
         </span>
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-xs text-gray-400">pre-load realistic site data</span>
+        <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>pre-load realistic site data</span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {DEMO_SCENARIOS.map((scenario) => {
+      {/* Scenario grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
+        {DEMO_SCENARIOS.map(scenario => {
           const isActive = activeId === scenario.id
           return (
             <button
               key={scenario.id}
               onClick={() => handleSelect(scenario)}
-              className={[
-                'text-left px-3 py-2.5 rounded-lg border transition-all duration-150 group',
-                isActive
-                  ? 'border-yellow bg-yellow-50 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-yellow-300 hover:bg-yellow-50/50',
-              ].join(' ')}
+              style={{
+                textAlign: 'left', padding: '10px 12px', borderRadius: 'var(--radius-md)',
+                border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                background: isActive ? 'var(--accent-dim)' : 'var(--bg-secondary)',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                if (!isActive) {
+                  e.currentTarget.style.borderColor = 'var(--accent)'
+                  e.currentTarget.style.background = 'var(--accent-dim2)'
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isActive) {
+                  e.currentTarget.style.borderColor = 'var(--border)'
+                  e.currentTarget.style.background = 'var(--bg-secondary)'
+                }
+              }}
             >
-              <span className="text-lg block mb-1">{scenario.icon}</span>
-              <span className={[
-                'block text-xs font-bold leading-tight',
-                isActive ? 'text-yellow-700' : 'text-gray-700 group-hover:text-gray-900',
-              ].join(' ')}>
+              <span style={{ fontSize: '18px', display: 'block', marginBottom: '4px' }}>{scenario.icon}</span>
+              <span style={{
+                display: 'block', fontSize: '12px', fontWeight: 700, lineHeight: 1.3,
+                color: isActive ? 'var(--text-accent)' : 'var(--text-primary)',
+              }}>
                 {scenario.label}
               </span>
-              <span className="block text-[10px] text-gray-400 mt-0.5 leading-tight">
+              <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px', lineHeight: 1.3 }}>
                 {scenario.tag}
               </span>
             </button>
@@ -48,10 +62,14 @@ export default function DemoScenarios({ activeId, onSelect }) {
         })}
       </div>
 
+      {/* Demo loaded banner */}
       {activeId && (
-        <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
-          <p className="text-xs text-blue-600">
-            <span className="font-semibold">Demo loaded.</span>{' '}
+        <div style={{
+          marginTop: '10px', padding: '8px 12px', borderRadius: 'var(--radius-md)',
+          background: 'var(--info-bg)', border: '1px solid var(--info)',
+        }}>
+          <p style={{ fontSize: '12px', color: 'var(--info)', lineHeight: 1.5 }}>
+            <span style={{ fontWeight: 700 }}>Demo loaded.</span>{' '}
             Site description and contract text pre-filled. Click <strong>Analyse</strong> to run the full AI pipeline.
           </p>
         </div>

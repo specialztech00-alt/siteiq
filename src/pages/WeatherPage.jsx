@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Wind, Droplets, CloudRain, Thermometer, Flag, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 import { useWeather } from '../components/WeatherWidget'
 import { getStateByName, getStateNames } from '../data/nigeriaStates'
@@ -81,7 +82,7 @@ function SafetyBanner({ weather }) {
       bg: 'var(--success-bg)',
       border: 'var(--success)',
       color: 'var(--success)',
-      icon: '✓',
+      Icon: CheckCircle2,
       title: 'Safe working conditions',
       body: 'Current weather poses no significant construction hazards.',
     },
@@ -89,14 +90,14 @@ function SafetyBanner({ weather }) {
       bg: 'var(--warning-bg)',
       border: 'var(--warning)',
       color: 'var(--warning)',
-      icon: '⚠',
+      Icon: AlertTriangle,
       title: 'Exercise caution on site',
     },
     Danger: {
       bg: 'var(--danger-bg)',
       border: 'var(--danger)',
       color: 'var(--danger)',
-      icon: '✕',
+      Icon: XCircle,
       title: 'Hazardous conditions — review operations',
     },
   }[rating]
@@ -110,7 +111,7 @@ function SafetyBanner({ weather }) {
       borderRadius: '0 var(--radius-md) var(--radius-md) 0',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: alerts.length ? '10px' : 0 }}>
-        <span style={{ fontSize: '16px', color: cfg.color, fontWeight: 700 }}>{cfg.icon}</span>
+        <cfg.Icon size={16} style={{ color: cfg.color, flexShrink: 0 }} />
         <span style={{ fontSize: '14px', fontWeight: 600, color: cfg.color }}>{cfg.title}</span>
       </div>
       {rating === 'Safe' && (
@@ -188,36 +189,36 @@ function CurrentConditions({ weather, loading, error, stateName }) {
                   label: 'Wind',
                   value: `${Math.round(weather.windspeed_10m)} km/h`,
                   sub: windDir(weather.winddirection_10m),
-                  icon: '💨',
+                  Icon: Wind,
                 },
                 {
                   label: 'Humidity',
                   value: `${weather.relative_humidity_2m}%`,
-                  icon: '💧',
+                  Icon: Droplets,
                 },
                 {
                   label: 'Precipitation',
                   value: `${weather.precipitation} mm`,
-                  icon: '🌧',
+                  Icon: CloudRain,
                 },
                 {
                   label: 'UV Index',
                   value: weather.uv_index ?? 'N/A',
                   sub: uvLabel(weather.uv_index),
-                  icon: '☀️',
+                  Icon: Flag,
                 },
                 {
                   label: 'Feels Like',
                   value: `${Math.round(weather.apparent_temperature)}°C`,
-                  icon: '🌡',
+                  Icon: Thermometer,
                 },
-              ].map(({ label, value, sub, icon }) => (
+              ].map(({ label, value, sub, Icon }) => (
                 <div key={label} style={{
                   background: 'var(--bg-secondary)',
                   borderRadius: 'var(--radius-md)',
                   padding: '12px',
                 }}>
-                  <div style={{ fontSize: '16px', marginBottom: '4px' }}>{icon}</div>
+                  <div style={{ marginBottom: '4px', color: 'var(--text-tertiary)' }}><Icon size={16} /></div>
                   <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
                     {label}
                   </div>
@@ -287,11 +288,11 @@ function ForecastRow({ forecast, loading }) {
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   {Math.round(dayData.temperature_2m_min)}°C
                 </div>
-                <div style={{ fontSize: '11px', color: '#3b82f6', marginBottom: '4px' }}>
-                  💧 {dayData.precipitation_probability_max ?? 0}%
+                <div style={{ fontSize: '11px', color: 'var(--info)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Droplets size={10} /> {dayData.precipitation_probability_max ?? 0}%
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-                  💨 {Math.round(dayData.windspeed_10m_max)} km/h
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Wind size={10} /> {Math.round(dayData.windspeed_10m_max)} km/h
                 </div>
                 <span className={`badge-${rating.color}`} style={{ fontSize: '10px' }}>
                   {rating.label}
@@ -416,7 +417,7 @@ function StateComparison() {
           const data = temps[stateName]
           return (
             <div key={stateName} className="card" style={{ padding: '14px 16px', textAlign: 'center' }}>
-              <div style={{ fontSize: '16px', marginBottom: '6px' }}>🇳🇬</div>
+              <div style={{ fontSize: '16px', marginBottom: '6px', color: 'var(--text-tertiary)' }}>🇳🇬</div>
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                 {display}
               </div>

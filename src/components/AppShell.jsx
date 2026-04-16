@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react'
 import Sidebar from './Sidebar.jsx'
 import TopBar from './TopBar.jsx'
+import OnboardingModal from './OnboardingModal.jsx'
 
 const COLLAPSED_KEY = 'siteiq-sidebar-collapsed'
+const ONBOARDING_KEY = 'siteiq_onboarded'
 
 export default function AppShell({ children }) {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(COLLAPSED_KEY) === 'true'
   )
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => localStorage.getItem(ONBOARDING_KEY) !== 'true'
+  )
 
   function handleToggle() {
     const next = !collapsed
@@ -35,6 +40,11 @@ export default function AppShell({ children }) {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
+      {/* Onboarding modal — shown once on first login */}
+      {showOnboarding && (
+        <OnboardingModal onClose={() => setShowOnboarding(false)} />
+      )}
+
       {/* Sidebar */}
       <Sidebar
         collapsed={collapsed}

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Search, Trash2, HardHat, TriangleAlert, CheckCircle2, Plus } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 import CircularScore from '../components/CircularScore'
 import StarRating from '../components/StarRating'
@@ -32,25 +33,7 @@ const SORT_OPTIONS = [
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
-function SearchIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.4" />
-      <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function TrashIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 4h12" />
-      <path d="M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4" />
-      <path d="M6 7v5M10 7v5" />
-      <path d="M3 4l.8 9.5A.5.5 0 004.3 14h7.4a.5.5 0 00.5-.5L13 4" />
-    </svg>
-  )
-}
+// SearchIcon, TrashIcon from lucide-react
 
 function ConstructionIcon() {
   return (
@@ -155,8 +138,9 @@ function ProjectCard({ analysis, onViewReport, onDelete }) {
           </span>
         )}
         {analysis.workerCount && (
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            👷 {analysis.workerCount} workers
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <HardHat size={12} />
+            {analysis.workerCount} workers
           </span>
         )}
       </div>
@@ -196,18 +180,18 @@ function ProjectCard({ analysis, onViewReport, onDelete }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <div style={{ minWidth: 0 }}>
           {isHighRisk && (
-            <div style={{ fontSize: '12px', color: 'var(--danger)', lineHeight: 1.4 }}>
-              ⚠ High risk — immediate action required
+            <div style={{ fontSize: '12px', color: 'var(--danger)', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <TriangleAlert size={12} /> High risk — immediate action required
             </div>
           )}
           {hasContractIssues && (
-            <div style={{ fontSize: '12px', color: 'var(--warning)', lineHeight: 1.4 }}>
-              ⚠ Contract issues detected
+            <div style={{ fontSize: '12px', color: 'var(--warning)', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <TriangleAlert size={12} /> Contract issues detected
             </div>
           )}
           {isPerformingWell && (
-            <div style={{ fontSize: '12px', color: 'var(--success)', lineHeight: 1.4 }}>
-              ✓ Site performing well
+            <div style={{ fontSize: '12px', color: 'var(--success)', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={12} /> Site performing well
             </div>
           )}
         </div>
@@ -237,7 +221,7 @@ function ProjectCard({ analysis, onViewReport, onDelete }) {
             onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
             onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)' }}
           >
-            <TrashIcon />
+            <Trash2 size={16} />
           </button>
         </div>
       </div>
@@ -375,8 +359,9 @@ export default function ArchivePage() {
             {analyses.length} {analyses.length === 1 ? 'analysis' : 'analyses'} · {uniqueProjects} {uniqueProjects === 1 ? 'project' : 'projects'}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/app/new-analysis')}>
-          New Analysis
+        <button className="btn-primary" onClick={() => navigate('/app/new-analysis')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Plus size={14} strokeWidth={2.5} />
+          Run Analysis
         </button>
       </div>
 
@@ -401,7 +386,7 @@ export default function ArchivePage() {
               pointerEvents: 'none',
               display: 'flex',
             }}>
-              <SearchIcon />
+              <Search size={15} />
             </span>
             <input
               className="input"

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Camera, FileText, CheckCircle2, TriangleAlert, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
 import useAppStore from '../store/useAppStore.js'
 import useAuthStore from '../store/useAuthStore.js'
 import StepIndicator from '../components/StepIndicator.jsx'
@@ -112,7 +113,7 @@ function WeatherPreview({ stateName }) {
           color: safetyColor,
           whiteSpace: 'nowrap',
         }}>
-          {safety.rating === 'Safe' ? '✓ Safe to work' : safety.rating === 'Caution' ? '⚠ Use caution' : '✕ Suspend operations'}
+          {safety.rating === 'Safe' ? 'Safe to work' : safety.rating === 'Caution' ? 'Use caution' : 'Suspend operations'}
         </span>
       </div>
 
@@ -124,7 +125,7 @@ function WeatherPreview({ stateName }) {
           padding: '10px 14px',
         }}>
           <p style={{ fontSize: '12px', fontWeight: 600, color: safetyColor, marginBottom: '4px' }}>
-            ⚠ Current conditions in {stateName}:
+            Current conditions in {stateName}:
           </p>
           {safety.alerts.map((alert, i) => (
             <p key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
@@ -199,7 +200,6 @@ function FileUploadZone({ accept, icon, title, subtitle, file, onFile, onRemove,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '20px',
           }}>
             {icon}
           </div>
@@ -207,7 +207,7 @@ function FileUploadZone({ accept, icon, title, subtitle, file, onFile, onRemove,
             <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{title}</p>
             <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{subtitle}</p>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-accent)', fontWeight: 500 }}>Browse files</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-accent)', fontWeight: 500 }}>Browse files or drag and drop</span>
         </>
       ) : (
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
@@ -619,9 +619,10 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
               onClick={() => {
                 if (validateStep1()) setCurrentStep(2)
               }}
-              style={{ opacity: step1Valid ? 1 : 0.5, cursor: step1Valid ? 'pointer' : 'not-allowed' }}
+              style={{ opacity: step1Valid ? 1 : 0.5, cursor: step1Valid ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              Next: Upload Files →
+              Upload Evidence
+              <ChevronRight size={14} />
             </button>
           </div>
         </>
@@ -681,8 +682,8 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
             <FileUploadZone
               accept="image/jpeg,image/png,image/webp"
-              icon="📷"
-              title="Site photo"
+              icon={<Camera size={20} color="var(--text-accent)" />}
+              title="Upload Site Photo"
               subtitle="JPG, PNG, WEBP · Max 10MB"
               file={photoFile}
               onFile={handlePhotoFile}
@@ -699,8 +700,8 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
 
             <FileUploadZone
               accept=".pdf,.txt,.docx"
-              icon="📄"
-              title="Contract document"
+              icon={<FileText size={20} color="var(--text-accent)" />}
+              title="Upload Contract"
               subtitle="PDF, TXT, DOCX · Max 25MB"
               file={docFile}
               onFile={handleDocFile}
@@ -779,16 +780,19 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
             <button
               className="btn-ghost"
               onClick={() => setCurrentStep(1)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              ← Back
+              <ChevronLeft size={14} />
+              Back
             </button>
             <button
               className="btn-primary"
               disabled={!step2Valid}
               onClick={runAnalysis}
-              style={{ opacity: step2Valid ? 1 : 0.5, cursor: step2Valid ? 'pointer' : 'not-allowed' }}
+              style={{ opacity: step2Valid ? 1 : 0.5, cursor: step2Valid ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              Start Analysis →
+              Generate Report
+              <ChevronRight size={14} />
             </button>
           </div>
         </>

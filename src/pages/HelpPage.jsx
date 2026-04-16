@@ -139,7 +139,7 @@ export default function HelpPage() {
             <div key={card.title} className="card" onClick={() => navigate(card.route)}
               style={{ padding: '16px', cursor: 'pointer', transition: 'border-color 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = ''}>
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
               <div style={{ marginBottom: '10px' }}>{card.icon}</div>
               <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>{card.title}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{card.desc}</div>

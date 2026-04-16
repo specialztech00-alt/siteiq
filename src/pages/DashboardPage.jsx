@@ -1,4 +1,15 @@
 import { useNavigate } from 'react-router-dom'
+import {
+  ScanLine,
+  HardHat,
+  ScrollText,
+  Sparkles,
+  CloudSun,
+  Globe,
+  ShieldAlert,
+  Archive,
+  Plus,
+} from 'lucide-react'
 import useAppStore from '../store/useAppStore.js'
 import useAuthStore from '../store/useAuthStore.js'
 import CircularScore from '../components/CircularScore.jsx'
@@ -46,6 +57,41 @@ const RECENT_ANALYSES = [
     status: 'Complete',
   },
 ]
+
+// ── Greeting helpers ──────────────────────────────────────────────────────────
+
+function getGreeting(name) {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 12) return `Good morning, ${name}.`
+  if (h >= 12 && h < 17) return `Good afternoon, ${name}.`
+  if (h >= 17 && h < 21) return `Good evening, ${name}.`
+  return `Working late, ${name}.`
+}
+
+function getContextLine() {
+  const now = new Date()
+  const day = now.getDay()   // 0=Sun, 1=Mon, ..., 6=Sat
+  const h = now.getHours()
+  const month = now.getMonth() + 1  // 1-12
+
+  // Monday morning
+  if (day === 1 && h < 12) {
+    return 'Start of the work week. Run a site analysis before your crew arrives.'
+  }
+  // Friday afternoon
+  if (day === 5 && h >= 12) {
+    return 'End of week. Review your risk register before the weekend.'
+  }
+  // Rainy season — April to October
+  if (month >= 4 && month <= 10) {
+    return 'Rainy season is active. Check ground conditions before site operations.'
+  }
+  // Harmattan — November to February
+  if (month >= 11 || month <= 2) {
+    return 'Harmattan conditions may affect visibility and concrete curing. Monitor weather daily.'
+  }
+  return null
+}
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
@@ -103,7 +149,7 @@ function StatCard({ label, value, sub, accent }) {
   )
 }
 
-function QuickAction({ icon, label, to, color }) {
+function QuickAction({ Icon, label, to, color }) {
   const navigate = useNavigate()
   return (
     <button
@@ -134,7 +180,7 @@ function QuickAction({ icon, label, to, color }) {
         e.currentTarget.style.transform = 'translateY(0)'
       }}
     >
-      <span style={{ fontSize: '20px' }}>{icon}</span>
+      <Icon size={20} strokeWidth={1.5} />
       <span style={{ fontSize: '11px', fontWeight: 500, textAlign: 'center', lineHeight: 1.3, color: 'var(--text-secondary)' }}>
         {label}
       </span>
@@ -193,6 +239,9 @@ export default function DashboardPage() {
   const now = new Date()
   const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
+  const greeting = getGreeting(firstName)
+  const contextLine = getContextLine()
+
   const geoScore = getConstructionScore(selectedState)
   const riskSummary = getRegionalRiskSummary(selectedState)
   const floodAdvice = getFloodRiskAdvice(selectedState)
@@ -206,9 +255,14 @@ export default function DashboardPage() {
       {/* ── Header row ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-            Good {getGreeting()}, {firstName}
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
+            {greeting}
           </h1>
+          {contextLine && (
+            <p style={{ fontSize: '13px', color: 'var(--text-accent)', marginBottom: '2px', fontWeight: 500 }}>
+              {contextLine}
+            </p>
+          )}
           <p style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>{dateStr}</p>
         </div>
 
@@ -217,10 +271,8 @@ export default function DashboardPage() {
           className="btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="7" y1="1" x2="7" y2="13" /><line x1="1" y1="7" x2="13" y2="7" />
-          </svg>
-          New Analysis
+          <Plus size={14} strokeWidth={2.5} />
+          Run Analysis
         </button>
       </div>
 
@@ -248,7 +300,7 @@ export default function DashboardPage() {
           </div>
 
           {RECENT_ANALYSES.map((a, i) => {
-            const combined = a.safetyScore + a.contractScore  // 0–200 for StarRating
+            const combined = a.safetyScore + a.contractScore
             return (
               <div
                 key={a.id}
@@ -265,10 +317,8 @@ export default function DashboardPage() {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 onClick={() => navigate('/app/report')}
               >
-                {/* Safety circle */}
                 <CircularScore score={a.safetyScore} size={48} showLabel={false} />
 
-                {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -282,7 +332,6 @@ export default function DashboardPage() {
                   <StarRating score={combined} size={12} />
                 </div>
 
-                {/* Contract score pill */}
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Contract</p>
                   <span style={{
@@ -351,9 +400,6 @@ export default function DashboardPage() {
               padding: '12px 14px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '14px' }}>
-                  {floodAdvice.level === 'Very High' || floodAdvice.level === 'High' ? '🌊' : floodAdvice.level === 'Medium' ? '⚠️' : '✓'}
-                </span>
                 <p style={{ fontSize: '12px', fontWeight: 600, color: riskColor(floodAdvice.level) }}>
                   Flood Risk: {floodAdvice.level}
                 </p>
@@ -368,14 +414,14 @@ export default function DashboardPage() {
       <div style={{ marginBottom: '24px' }}>
         <p className="section-label" style={{ marginBottom: '10px' }}>Quick Actions</p>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <QuickAction icon="🔍" label="New Analysis" to="/app/new-analysis" color="var(--accent)" />
-          <QuickAction icon="🛡️" label="Safety Monitor" to="/app/safety" color="var(--warning)" />
-          <QuickAction icon="📄" label="Contract Analyser" to="/app/contract" color="var(--accent)" />
-          <QuickAction icon="🤖" label="AI Assistant" to="/app/assistant" color="var(--success)" />
-          <QuickAction icon="🌦️" label="Site Weather" to="/app/weather" color="var(--accent)" />
-          <QuickAction icon="🗺️" label="Geo Intelligence" to="/app/geo" color="var(--accent)" />
-          <QuickAction icon="⚠️" label="Risk Register" to="/app/risks" color="var(--danger)" />
-          <QuickAction icon="📁" label="Archive" to="/app/archive" color="var(--text-secondary)" />
+          <QuickAction Icon={ScanLine}   label="Run Analysis"     to="/app/new-analysis" color="var(--accent)" />
+          <QuickAction Icon={HardHat}    label="Safety Monitor"   to="/app/safety"       color="var(--warning)" />
+          <QuickAction Icon={ScrollText} label="Contract Analyser"to="/app/contract"     color="var(--accent)" />
+          <QuickAction Icon={Sparkles}   label="Site Intelligence"to="/app/assistant"    color="var(--success)" />
+          <QuickAction Icon={CloudSun}   label="Site Weather"     to="/app/weather"      color="var(--accent)" />
+          <QuickAction Icon={Globe}      label="Ground Conditions"to="/app/geo"          color="var(--accent)" />
+          <QuickAction Icon={ShieldAlert}label="Risk Matrix"      to="/app/risks"        color="var(--danger)" />
+          <QuickAction Icon={Archive}    label="Project Archive"  to="/app/archive"      color="var(--text-secondary)" />
         </div>
       </div>
 
@@ -418,11 +464,4 @@ export default function DashboardPage() {
       )}
     </div>
   )
-}
-
-function getGreeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'morning'
-  if (h < 17) return 'afternoon'
-  return 'evening'
 }

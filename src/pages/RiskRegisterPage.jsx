@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ClipboardList, Search, ArrowUpDown } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 
 function SectionLabel({ children }) {
@@ -21,7 +22,7 @@ const STATUS_COLORS = {
 
 const SEVERITY_COLORS = {
   Critical: 'var(--danger)',
-  High: '#f97316',
+  High: 'var(--warning)',
   Medium: 'var(--warning)',
   Low: 'var(--success)',
 }
@@ -106,15 +107,14 @@ export default function RiskRegisterPage() {
   if (analyses.length === 0) {
     return (
       <div style={{ padding: '28px 32px', maxWidth: '700px', margin: '0 auto', textAlign: 'center', paddingTop: '80px' }}>
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.2" style={{ marginBottom: '20px' }}>
-          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          <line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" />
-        </svg>
+        <div style={{ color: 'var(--text-tertiary)', marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+          <ClipboardList size={64} strokeWidth={1} />
+        </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>
-          No risks yet
+          Risk matrix is empty
         </h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-          Run your first site analysis to populate the risk register.
+          Run a site analysis to populate the risk register. Every risk identified will appear here with severity, status, and recommended action.
         </p>
         <button className="btn" onClick={() => navigate('/app/new-analysis')} style={{ padding: '10px 24px' }}>
           Run Analysis
@@ -129,7 +129,7 @@ export default function RiskRegisterPage() {
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Risk Register
+          Risk Matrix
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '5px 0 0' }}>
           All risks aggregated across {analyses.length} {analyses.length === 1 ? 'analysis' : 'analyses'}

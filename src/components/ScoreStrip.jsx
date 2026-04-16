@@ -1,67 +1,57 @@
 /**
  * ScoreStrip — Overview metric cards at the top of the report.
- * Shows safety score, contract health, risk counts, and obligation counts.
  */
 
-function ScoreGauge({ score, label, color }) {
+function ScoreGauge({ score, label }) {
   if (score == null) return null
 
-  // Arc SVG parameters
-  const r = 38
-  const cx = 48
-  const cy = 48
+  const r = 38, cx = 48, cy = 48
   const circ = 2 * Math.PI * r
   const offset = circ - (score / 100) * circ
 
-  const trackColor = '#e5e7eb'
-  const fillColor = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444'
+  const trackColor = 'var(--border)'
+  const fillColor  = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--danger)'
 
   return (
-    <div className="card flex flex-col items-center text-center py-6">
-      <div className="relative w-24 h-24 mb-3">
-        <svg viewBox="0 0 96 96" className="w-full h-full -rotate-90">
-          {/* Track */}
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 16px' }}>
+      <div style={{ position: 'relative', width: '96px', height: '96px', marginBottom: '12px' }}>
+        <svg viewBox="0 0 96 96" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth="8" />
-          {/* Fill */}
           <circle
             cx={cx} cy={cy} r={r}
-            fill="none"
-            stroke={fillColor}
-            strokeWidth="8"
+            fill="none" stroke={fillColor} strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={offset}
             style={{ transition: 'stroke-dashoffset 0.8s ease-out' }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="score-number text-3xl" style={{ color: fillColor }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 700, lineHeight: 1, color: fillColor }}>
             {Math.round(score)}
           </span>
         </div>
       </div>
-      <span className="font-heading font-bold text-sm text-gray-600 uppercase tracking-wide">{label}</span>
-      <span className="text-xs text-gray-400 mt-0.5">
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
+        {label}
+      </span>
+      <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
         {score >= 70 ? 'Good' : score >= 40 ? 'Needs attention' : 'Critical'}
       </span>
     </div>
   )
 }
 
-function CountCard({ count, label, sublabel, color }) {
-  const colorMap = {
-    red: 'text-red-500 bg-red-50 border-red-100',
-    amber: 'text-amber-500 bg-amber-50 border-amber-100',
-    blue: 'text-blue-500 bg-blue-50 border-blue-100',
-    gray: 'text-gray-500 bg-gray-50 border-gray-100',
-  }
-  const cls = colorMap[color] ?? colorMap.gray
-
+function CountCard({ count, label, sublabel, colorVar, bgVar }) {
   return (
-    <div className={`card border flex flex-col items-center text-center py-6 ${cls}`}>
-      <span className="score-number text-4xl">{count}</span>
-      <span className="font-heading font-bold text-sm uppercase tracking-wide mt-2">{label}</span>
-      {sublabel && <span className="text-xs mt-0.5 opacity-70">{sublabel}</span>}
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 16px', border: `1px solid ${colorVar}` }}>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: colorVar, lineHeight: 1 }}>{count}</span>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginTop: '8px' }}>
+        {label}
+      </span>
+      {sublabel && (
+        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{sublabel}</span>
+      )}
     </div>
   )
 }
@@ -72,15 +62,17 @@ export default function ScoreStrip({ report }) {
   const obligationCount = obligations?.length ?? 0
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
       <ScoreGauge score={safetyScore} label="Safety Score" />
       {contractScore != null
         ? <ScoreGauge score={contractScore} label="Contract Health" />
         : (
-          <div className="card flex flex-col items-center text-center py-6 opacity-50">
-            <span className="score-number text-3xl text-gray-300">—</span>
-            <span className="font-heading font-bold text-sm text-gray-400 uppercase tracking-wide mt-3">Contract Health</span>
-            <span className="text-xs text-gray-300 mt-0.5">No contract</span>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px 16px', opacity: 0.5 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 700, color: 'var(--text-tertiary)', lineHeight: 1 }}>—</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginTop: '12px' }}>
+              Contract Health
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>No contract</span>
           </div>
         )
       }
@@ -88,13 +80,15 @@ export default function ScoreStrip({ report }) {
         count={riskCount?.high ?? 0}
         label="High Risks"
         sublabel={`${totalRisks} total risks`}
-        color="red"
+        colorVar="var(--danger)"
+        bgVar="var(--danger-bg)"
       />
       <CountCard
         count={obligationCount}
         label="Obligations"
         sublabel="requiring action"
-        color="blue"
+        colorVar="var(--info)"
+        bgVar="var(--info-bg)"
       />
     </div>
   )

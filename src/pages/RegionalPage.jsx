@@ -13,7 +13,7 @@ function SectionLabel({ children }) {
 
 const RISK_COLORS = {
   'Very High': 'var(--danger)',
-  High: '#f97316',
+  High: 'var(--warning)',
   Medium: 'var(--warning)',
   Low: 'var(--success)',
 }
@@ -169,7 +169,7 @@ export default function RegionalPage() {
                 onClick={() => navigate('/app/geo')}
                 style={{ padding: '14px', cursor: 'pointer', transition: 'border-color 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = ''}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
               >
                 {/* Header row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>

@@ -11,22 +11,32 @@ const QUICK_QUESTIONS = [
   'What happens if the Employer is late with information?',
 ]
 
+function SiteIQIcon() {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" style={{ width: '14px', height: '14px' }}>
+      <rect x="4" y="20" width="24" height="4" rx="2" fill="var(--accent)" />
+      <path d="M8 20 C8 11 24 11 24 20Z" fill="var(--accent)" />
+    </svg>
+  )
+}
+
 function MessageBubble({ msg }) {
   const isUser = msg.role === 'user'
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
+    <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', marginBottom: '10px' }}>
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center mr-2 flex-shrink-0 mt-1">
-          <svg viewBox="0 0 32 32" fill="none" className="w-4 h-4">
-            <rect x="4" y="20" width="24" height="4" rx="2" fill="#f5c400" />
-            <path d="M8 20 C8 11 24 11 24 20Z" fill="#f5c400" />
-          </svg>
+        <div style={{
+          width: '28px', height: '28px', borderRadius: '50%',
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginRight: '8px', flexShrink: 0, marginTop: '2px',
+        }}>
+          <SiteIQIcon />
         </div>
       )}
       <div className={isUser ? 'chat-bubble-user' : 'chat-bubble-ai'}>
-        {/* Render newlines as line breaks */}
-        <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-        <span className="block text-[10px] opacity-40 mt-1.5 text-right">
+        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{msg.content}</div>
+        <span style={{ display: 'block', fontSize: '10px', opacity: 0.45, marginTop: '4px', textAlign: 'right' }}>
           {isUser ? 'You' : 'SiteIQ AI'}
         </span>
       </div>
@@ -36,33 +46,40 @@ function MessageBubble({ msg }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex justify-start mb-3">
-      <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center mr-2 flex-shrink-0">
-        <svg viewBox="0 0 32 32" fill="none" className="w-4 h-4">
-          <rect x="4" y="20" width="24" height="4" rx="2" fill="#f5c400" />
-          <path d="M8 20 C8 11 24 11 24 20Z" fill="#f5c400" />
-        </svg>
+    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}>
+      <div style={{
+        width: '28px', height: '28px', borderRadius: '50%',
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginRight: '8px', flexShrink: 0,
+      }}>
+        <SiteIQIcon />
       </div>
-      <div className="chat-bubble-ai flex items-center gap-1 py-3">
-        <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+      <div className="chat-bubble-ai" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '12px 14px' }}>
+        {[0, 1, 2].map(i => (
+          <span key={i} style={{
+            width: '7px', height: '7px', borderRadius: '50%',
+            background: 'var(--text-tertiary)', display: 'inline-block',
+            animation: 'fc-typing-dot 1.2s ease infinite',
+            animationDelay: `${i * 0.15}s`,
+          }} />
+        ))}
       </div>
     </div>
   )
 }
 
 export default function ContractChat() {
-  const chatHistory = useAppStore(s => s.chatHistory)
-  const addChatMessage = useAppStore(s => s.addChatMessage)
-  const isChatLoading = useAppStore(s => s.isChatLoading)
+  const chatHistory     = useAppStore(s => s.chatHistory)
+  const addChatMessage  = useAppStore(s => s.addChatMessage)
+  const isChatLoading   = useAppStore(s => s.isChatLoading)
   const setIsChatLoading = useAppStore(s => s.setIsChatLoading)
-  const docText = useAppStore(s => s.docText)
+  const docText         = useAppStore(s => s.docText)
 
-  const [input, setInput] = useState('')
-  const [error, setError] = useState(null)
-  const bottomRef = useRef(null)
-  const inputRef = useRef(null)
+  const [input, setInput]   = useState('')
+  const [error, setError]   = useState(null)
+  const bottomRef           = useRef(null)
+  const inputRef            = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -80,12 +97,10 @@ export default function ContractChat() {
     setIsChatLoading(true)
 
     try {
-      // Build messages array from history + new user message
       const messages = [...chatHistory, userMsg].map(m => ({
         role: m.role === 'user' ? 'user' : 'assistant',
         content: m.content,
       }))
-
       const reply = await chatWithContract(messages, docText)
       addChatMessage({ role: 'assistant', content: reply })
     } catch (err) {
@@ -105,35 +120,56 @@ export default function ContractChat() {
   const hasContract = !!docText
 
   return (
-    <div className="flex flex-col h-full" style={{ minHeight: '500px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '500px' }}>
+      <style>{`
+        @keyframes fc-typing-dot {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+          30%           { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
-          <h2 className="font-heading font-bold text-lg text-gray-900">Contract Q&amp;A</h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Contract Q&A
+          </h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '3px' }}>
             {hasContract
               ? 'Ask anything about your contract — clause-referenced answers'
               : 'No contract uploaded — answering from general construction law knowledge'}
           </p>
         </div>
         {!hasContract && (
-          <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-lg font-medium">
+          <span style={{
+            fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: 'var(--radius-md)',
+            background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid var(--warning)',
+          }}>
             General mode
           </span>
         )}
       </div>
 
-      {/* Quick question pills */}
+      {/* Quick questions */}
       {chatHistory.length === 0 && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Quick questions</p>
-          <div className="flex flex-wrap gap-2">
-            {QUICK_QUESTIONS.map((q) => (
+        <div style={{ marginBottom: '16px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>
+            Quick questions
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {QUICK_QUESTIONS.map(q => (
               <button
                 key={q}
                 onClick={() => sendMessage(q)}
                 disabled={isChatLoading}
-                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:border-yellow hover:bg-yellow-50 hover:text-yellow-700 transition-colors disabled:opacity-50 text-gray-600"
+                style={{
+                  fontSize: '12px', padding: '5px 10px', borderRadius: '20px',
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s',
+                  opacity: isChatLoading ? 0.5 : 1,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--text-accent)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
               >
                 {q}
               </button>
@@ -143,17 +179,24 @@ export default function ContractChat() {
       )}
 
       {/* Message list */}
-      <div className="flex-1 overflow-y-auto thin-scrollbar bg-gray-50 rounded-xl p-4 mb-4 min-h-0" style={{ maxHeight: '420px' }}>
+      <div style={{
+        flex: 1, overflowY: 'auto', background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+        padding: '14px', marginBottom: '12px', minHeight: '200px', maxHeight: '420px',
+      }} className="thin-scrollbar">
         {chatHistory.length === 0 && !isChatLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className="w-12 h-12 rounded-full bg-navy/10 flex items-center justify-center mb-3">
-              <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-                <rect x="4" y="20" width="24" height="4" rx="2" fill="#f5c400" />
-                <path d="M8 20 C8 11 24 11 24 20Z" fill="#f5c400" />
-              </svg>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '32px 16px', textAlign: 'center' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'var(--accent-dim)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', marginBottom: '12px',
+            }}>
+              <SiteIQIcon />
             </div>
-            <p className="text-sm font-semibold text-gray-600">Ask anything about your contract</p>
-            <p className="text-xs text-gray-400 mt-1">Select a quick question above or type your own</p>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Ask anything about your contract</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+              Select a quick question above or type your own
+            </p>
           </div>
         )}
 
@@ -164,7 +207,10 @@ export default function ContractChat() {
         {isChatLoading && <TypingIndicator />}
 
         {error && (
-          <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-2">
+          <div style={{
+            fontSize: '12px', padding: '10px 12px', borderRadius: 'var(--radius-md)', marginTop: '8px',
+            background: 'var(--danger-bg)', border: '1px solid var(--danger)', color: 'var(--danger)',
+          }}>
             {error}
           </div>
         )}
@@ -173,30 +219,37 @@ export default function ContractChat() {
       </div>
 
       {/* Input */}
-      <div className="flex gap-2">
+      <div style={{ display: 'flex', gap: '8px' }}>
         <textarea
           ref={inputRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about your contract... (Enter to send)"
           rows={2}
-          className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow/30 focus:border-yellow transition-colors"
           disabled={isChatLoading}
+          className="input"
+          style={{ flex: 1, resize: 'none', lineHeight: 1.5 }}
         />
         <button
           onClick={() => sendMessage()}
           disabled={!input.trim() || isChatLoading}
-          className="flex-shrink-0 w-11 bg-yellow hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-navy rounded-xl flex items-center justify-center transition-colors"
-          title="Send"
+          style={{
+            flexShrink: 0, width: '44px', borderRadius: 'var(--radius-lg)',
+            background: input.trim() && !isChatLoading ? 'var(--accent)' : 'var(--border)',
+            border: 'none', cursor: input.trim() && !isChatLoading ? 'pointer' : 'not-allowed',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#0f1114', transition: 'background 0.15s',
+          }}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-2 text-center">
+      <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '6px', textAlign: 'center' }}>
         Powered by Claude · Always verify with a qualified solicitor
       </p>
     </div>

@@ -1,83 +1,103 @@
 import { useState } from 'react'
 
-const SEVERITY_CLASSES = {
-  High: 'badge-high',
-  Medium: 'badge-medium',
-  Low: 'badge-low',
+const SEVERITY_COLOR = {
+  High:   'var(--danger)',
+  Medium: 'var(--warning)',
+  Low:    'var(--success)',
 }
 
-const SEVERITY_BORDER = {
-  High: 'border-l-red-400',
-  Medium: 'border-l-amber-400',
-  Low: 'border-l-green-400',
-}
-
-const SEVERITY_DOT = {
-  High: 'bg-red-400',
-  Medium: 'bg-amber-400',
-  Low: 'bg-green-400',
+const SEVERITY_BG = {
+  High:   'var(--danger-bg)',
+  Medium: 'var(--warning-bg)',
+  Low:    'var(--success-bg)',
 }
 
 export default function RiskCard({ risk }) {
   const [expanded, setExpanded] = useState(false)
   const { id, severity, title, description, action, regulation } = risk
 
+  const color  = SEVERITY_COLOR[severity] ?? 'var(--text-tertiary)'
+  const bg     = SEVERITY_BG[severity]    ?? 'transparent'
+
   return (
-    <div className={`card border-l-4 ${SEVERITY_BORDER[severity] ?? 'border-l-gray-300'} p-0 overflow-hidden`}>
-      {/* Header — always visible */}
+    <div className="card" style={{ borderLeft: `3px solid ${color}`, padding: 0, overflow: 'hidden' }}>
+      {/* Header */}
       <button
-        className="w-full text-left px-5 py-4 flex items-start gap-4"
         onClick={() => setExpanded(v => !v)}
+        style={{
+          width: '100%', textAlign: 'left', padding: '14px 16px',
+          display: 'flex', alignItems: 'flex-start', gap: '12px',
+          background: 'none', border: 'none', cursor: 'pointer',
+        }}
       >
         {/* Dot */}
-        <span className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${SEVERITY_DOT[severity] ?? 'bg-gray-400'}`} />
+        <span style={{
+          marginTop: '3px', width: '9px', height: '9px', borderRadius: '50%',
+          background: color, flexShrink: 0, display: 'inline-block',
+        }} />
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide ${SEVERITY_CLASSES[severity] ?? ''}`}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Badge row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center',
+              padding: '2px 8px', borderRadius: '4px',
+              fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+              background: bg, color,
+            }}>
               {severity}
             </span>
             {id && (
-              <span className="font-mono-clause text-gray-400">{id}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                {id}
+              </span>
             )}
           </div>
-          <h3 className="font-heading font-bold text-base text-gray-900 mt-1 leading-snug">
+          <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.35 }}>
             {title}
           </h3>
         </div>
 
         {/* Chevron */}
         <svg
-          className={`w-4 h-4 text-gray-400 flex-shrink-0 mt-1 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          width="14" height="14" viewBox="0 0 14 14" fill="none"
+          stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round"
+          style={{ flexShrink: 0, marginTop: '3px', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <polyline points="2,5 7,9 12,5" />
         </svg>
       </button>
 
-      {/* Expanded content */}
+      {/* Expanded */}
       {expanded && (
-        <div className="px-5 pb-5 space-y-3 border-t border-gray-100 pt-3">
+        <div style={{ padding: '0 16px 14px', borderTop: '1px solid var(--border)' }}>
           {description && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Risk</p>
-              <p className="text-sm text-gray-700 leading-relaxed">{description}</p>
+            <div style={{ marginTop: '12px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                Risk
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{description}</p>
             </div>
           )}
 
           {action && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-              <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Required Action</p>
-              <p className="text-sm text-blue-800 leading-relaxed">{action}</p>
+            <div style={{
+              marginTop: '10px', padding: '10px 12px', borderRadius: 'var(--radius-md)',
+              background: 'var(--info-bg)', border: '1px solid var(--info)',
+            }}>
+              <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--info)', marginBottom: '4px' }}>
+                Required Action
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{action}</p>
             </div>
           )}
 
           {regulation && (
-            <div className="flex items-start gap-2">
-              <svg className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.5" style={{ marginTop: '1px', flexShrink: 0 }}>
+                <path d="M2 1h7l3 3v9H2V1z"/><line x1="5" y1="6" x2="9" y2="6"/><line x1="5" y1="8.5" x2="9" y2="8.5"/>
               </svg>
-              <span className="font-mono-clause text-gray-500">{regulation}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>{regulation}</span>
             </div>
           )}
         </div>

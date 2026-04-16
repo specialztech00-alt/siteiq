@@ -29,11 +29,8 @@ export default function UploadZone({ accept, label, icon, hint, file, onFile, on
 
   return (
     <div
-      className={[
-        'upload-zone relative select-none',
-        isDragging ? 'drag-over' : '',
-        hasFile ? 'has-file' : '',
-      ].join(' ')}
+      className={['upload-zone', isDragging ? 'drag-over' : '', hasFile ? 'has-file' : ''].join(' ')}
+      style={{ position: 'relative', userSelect: 'none' }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -43,45 +40,61 @@ export default function UploadZone({ accept, label, icon, hint, file, onFile, on
         ref={inputRef}
         type="file"
         accept={accept}
-        className="hidden"
+        style={{ display: 'none' }}
         onChange={handleChange}
       />
 
       {hasFile ? (
-        /* File loaded state */
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0 text-xl">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: 'var(--radius-md)',
+              background: 'var(--success-bg)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', flexShrink: 0, fontSize: '20px',
+            }}>
               {icon}
             </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-green-700 text-sm truncate">{file.name}</p>
-              <p className="text-xs text-green-600 mt-0.5">
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontWeight: 600, color: 'var(--success)', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {file.name}
+              </p>
+              <p style={{ fontSize: '11px', color: 'var(--success)', marginTop: '2px' }}>
                 {(file.size / 1024).toFixed(0)} KB — ready to analyse
               </p>
             </div>
           </div>
           <button
-            onClick={(e) => { e.stopPropagation(); onClear() }}
-            className="ml-3 flex-shrink-0 w-7 h-7 rounded-full bg-green-100 hover:bg-red-100 text-green-600 hover:text-red-500 flex items-center justify-center transition-colors"
+            onClick={e => { e.stopPropagation(); onClear() }}
+            style={{
+              marginLeft: '12px', flexShrink: 0, width: '28px', height: '28px',
+              borderRadius: '50%', background: 'var(--success-bg)', border: '1px solid var(--success)',
+              color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-bg)'; e.currentTarget.style.borderColor = 'var(--danger)'; e.currentTarget.style.color = 'var(--danger)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--success-bg)'; e.currentTarget.style.borderColor = 'var(--success)'; e.currentTarget.style.color = 'var(--success)' }}
             title="Remove file"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="2" y1="2" x2="12" y2="12"/>
+              <line x1="12" y1="2" x2="2" y2="12"/>
             </svg>
           </button>
         </div>
       ) : (
-        /* Empty state */
-        <div className="flex flex-col items-center gap-2 py-2">
-          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '8px 0' }}>
+          <div style={{
+            width: '48px', height: '48px', borderRadius: 'var(--radius-lg)',
+            background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: '22px',
+          }}>
             {icon}
           </div>
-          <div>
-            <p className="font-semibold text-gray-700 text-sm">{label}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{hint}</p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '13px' }}>{label}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{hint}</p>
           </div>
-          <span className="text-xs text-yellow-600 font-medium mt-1">
+          <span style={{ fontSize: '11px', color: 'var(--text-accent)', fontWeight: 600, marginTop: '2px' }}>
             Click or drag &amp; drop
           </span>
         </div>
