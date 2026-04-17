@@ -278,6 +278,8 @@ export default function NewAnalysisPage() {
   const [siteDescription, setSiteDescription] = useState('')
   const [loadingStep, setLoadingStep] = useState(0)
   const [errors, setErrors] = useState({})
+  const [fileError, setFileError] = useState(null)
+  const [analysisError, setAnalysisError] = useState(null)
 
   const stateNames = getStateNames()
 
@@ -295,7 +297,18 @@ export default function NewAnalysisPage() {
 
   // ── Photo handling ──────────────────────────────────────────────────────────
 
+  const VALID_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+
   function handlePhotoFile(file) {
+    if (!VALID_IMAGE_TYPES.includes(file.type)) {
+      setFileError('Unsupported file type. Please upload JPG, PNG, or WEBP.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setFileError('File too large. Maximum size is 10MB.')
+      return
+    }
+    setFileError(null)
     setPhotoFile(file)
     const url = URL.createObjectURL(file)
     setPhotoPreview(url)
@@ -352,6 +365,11 @@ export default function NewAnalysisPage() {
   // ── Run analysis ────────────────────────────────────────────────────────────
 
   async function runAnalysis() {
+    if (!navigator.onLine) {
+      setAnalysisError('offline')
+      return
+    }
+    setAnalysisError(null)
     setCurrentStep(3)
     setLoadingStep(0)
 
@@ -679,7 +697,7 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
           </div>
 
           {/* Upload zones */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: fileError ? '10px' : '20px' }}>
             <FileUploadZone
               accept="image/jpeg,image/png,image/webp"
               icon={<Camera size={20} color="var(--text-accent)" />}
@@ -710,6 +728,20 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
               extracted={docWordCount ? `Text extracted (${docWordCount} words)` : null}
             />
           </div>
+
+          {/* File validation error */}
+          {fileError && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px', marginBottom: '20px',
+              background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)',
+              borderRadius: 'var(--radius-md)',
+            }}>
+              <TriangleAlert size={14} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <span style={{ fontSize: '13px', color: 'var(--danger)', flex: 1 }}>{fileError}</span>
+              <button onClick={() => setFileError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: '16px', lineHeight: 1 }}>×</button>
+            </div>
+          )}
 
           {/* Description textarea */}
           <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
@@ -774,6 +806,22 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
               ))}
             </div>
           </div>
+
+          {/* Offline error */}
+          {analysisError === 'offline' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '12px 16px', marginBottom: '16px',
+              background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)',
+              borderRadius: 'var(--radius-md)',
+            }}>
+              <TriangleAlert size={16} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--danger)' }}>No internet connection</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>SiteIQ requires an internet connection to run AI analysis. Please check your connection and try again.</p>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>

@@ -8,6 +8,7 @@ import { create } from 'zustand'
 import { detectObjects, extractEntities } from '../lib/huggingface.js'
 import { extractTextFromFile } from '../lib/pdfParser.js'
 import { analyseSite } from '../lib/claude.js'
+import { supabase } from '../lib/supabase.js'
 
 export const LOADING_STEPS = [
   'Initialising analysis engine',
@@ -36,6 +37,7 @@ const useAppStore = create((set, get) => ({
   analysisId: null,
   projectInfo: { projectName: '', company: '', siteLocation: '', siteManager: '' },
   analyses: [],
+  riskStatuses: {},
 
   // ── Assistant conversations ───────────────────────────────────────────────
   conversations: [],
@@ -76,12 +78,107 @@ const useAppStore = create((set, get) => ({
   setReportData: (data) => set({ reportData: data }),
   setAnalysisId: (id) => set({ analysisId: id }),
   setProjectInfo: (info) => set((state) => ({ projectInfo: { ...state.projectInfo, ...info } })),
-  addAnalysis: (analysis) => set((state) => ({
-    analyses: [analysis, ...state.analyses].slice(0, 50),
-  })),
-  removeAnalysis: (id) => set((state) => ({
-    analyses: state.analyses.filter(a => a.id !== id),
-  })),
+  addAnalysis: async (analysis) => {
+    set((state) => ({ analyses: [analysis, ...state.analyses].slice(0, 50) }))
+    if (!supabase) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('analyses').insert({
+        user_id: user.id,
+        analysis_id: analysis.id,
+        report_title: analysis.reportData?.reportTitle ?? null,
+        project_name: analysis.projectName ?? null,
+        company_name: analysis.companyName ?? null,
+        site_location: analysis.siteLocation ?? null,
+        site_manager: analysis.siteManager ?? null,
+        nigerian_state: analysis.selectedState ?? null,
+        construction_phase: analysis.constructionPhase ?? null,
+        worker_count: analysis.workerCount ?? null,
+        safety_score: analysis.reportData?.safetyScore ?? null,
+        contract_score: analysis.reportData?.contractScore ?? null,
+        risk_count_high: analysis.reportData?.riskCount?.high ?? 0,
+        risk_count_medium: analysis.reportData?.riskCount?.medium ?? 0,
+        risk_count_low: analysis.reportData?.riskCount?.low ?? 0,
+        report_data: analysis.reportData,
+      })
+    } catch (err) {
+      console.warn('[SiteIQ] Failed to persist analysis:', err.message)
+    }
+  },
+
+  removeAnalysis: async (id) => {
+    set((state) => ({ analyses: state.analyses.filter(a => a.id !== id) }))
+    if (!supabase) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('analyses').delete()
+        .eq('analysis_id', id)
+        .eq('user_id', user.id)
+    } catch (err) {
+      console.warn('[SiteIQ] Failed to delete analysis:', err.message)
+    }
+  },
+
+  loadAnalysesFromDb: async (userId) => {
+    try {
+      const uid = userId ?? (await supabase.auth.getUser()).data?.user?.id
+      if (!uid) return
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      if (error) throw error
+      if (!data) return
+      set({
+        analyses: data.map(row => ({
+          id: row.analysis_id,
+          projectName: row.project_name,
+          companyName: row.company_name,
+          selectedState: row.nigerian_state,
+          constructionPhase: row.construction_phase,
+          workerCount: row.worker_count,
+          reportData: row.report_data,
+          createdAt: row.created_at,
+        })),
+      })
+    } catch (err) {
+      console.warn('[SiteIQ] Failed to load analyses:', err.message)
+    }
+  },
+
+  syncRiskStatus: async (riskUid, status, userId) => {
+    set(state => ({ riskStatuses: { ...state.riskStatuses, [riskUid]: status } }))
+    try {
+      await supabase.from('risk_statuses').upsert({
+        user_id: userId,
+        risk_uid: riskUid,
+        status,
+        updated_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.warn('[SiteIQ] Failed to sync risk status:', err.message)
+    }
+  },
+
+  loadRiskStatuses: async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('risk_statuses')
+        .select('*')
+        .eq('user_id', userId)
+      if (data) {
+        const map = {}
+        data.forEach(r => { map[r.risk_uid] = r.status })
+        set({ riskStatuses: map })
+      }
+    } catch (err) {
+      console.warn('[SiteIQ] Failed to load risk statuses:', err.message)
+    }
+  },
 
   // ── Conversation actions ──────────────────────────────────────────────────
   setActiveConversationId: (id) => set({ activeConversationId: id }),

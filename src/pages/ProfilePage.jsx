@@ -23,12 +23,12 @@ function StatCard({ label, value, sub }) {
 const ROLE_OPTIONS = ['Site Manager', 'Safety Officer', 'Project Engineer', 'Quantity Surveyor', 'Contracts Manager', 'Architect', 'Other']
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuthStore()
+  const { user, profile, signOut, updateProfile } = useAuthStore()
   const { analyses } = useAppStore()
 
-  const [name, setName] = useState(user?.name || '')
-  const [company, setCompany] = useState(user?.company || '')
-  const [role, setRole] = useState(user?.role || '')
+  const [name, setName] = useState(profile?.full_name ?? user?.name ?? '')
+  const [company, setCompany] = useState(profile?.company ?? user?.company ?? '')
+  const [role, setRole] = useState(profile?.role ?? user?.role ?? '')
   const [saved, setSaved] = useState(false)
 
   const totalAnalyses = analyses.length
@@ -40,9 +40,9 @@ export default function ProfilePage() {
 
   const initials = (name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault()
-    // In a real app we'd call an API. Here we just show a saved banner.
+    await updateProfile({ full_name: name, company: company || null, role: role || null })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -124,7 +124,7 @@ export default function ProfilePage() {
               disabled
               style={{ width: '100%', boxSizing: 'border-box', opacity: 0.5 }}
             />
-            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>Email cannot be changed in demo mode</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>Email cannot be changed here</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>

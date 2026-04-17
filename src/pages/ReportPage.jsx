@@ -19,6 +19,95 @@ const TABS = [
   { id: 4, label: 'Q&A',        Icon: MessageSquare },
 ]
 
+// ── Score progress bar ──────────────────────────────────────────────────────────
+
+function ScoreBar({ score, color }) {
+  return (
+    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden', marginTop: '8px' }}>
+      <div style={{
+        height: '100%',
+        width: `${Math.min(score ?? 0, 100)}%`,
+        background: color,
+        borderRadius: '4px',
+        transition: 'width 1s ease',
+      }} />
+    </div>
+  )
+}
+
+function ProgressSummaryCard({ report }) {
+  const { safetyScore, contractScore, riskCount } = report
+
+  function scoreColor(s) {
+    if (s == null) return 'var(--text-tertiary)'
+    return s >= 70 ? 'var(--success)' : s >= 45 ? 'var(--warning)' : 'var(--danger)'
+  }
+
+  function scoreStatus(s, type) {
+    if (s == null) return 'No data'
+    if (type === 'safety') {
+      if (s >= 70) return '✓ Site performing well'
+      if (s >= 45) return '⚠ Moderate risks present'
+      return '✕ Immediate action required'
+    }
+    if (s >= 70) return '✓ Contract low risk'
+    if (s >= 45) return '⚠ Some risk clauses found'
+    return '✕ High financial exposure'
+  }
+
+  const safeColor = scoreColor(safetyScore)
+  const conColor  = scoreColor(contractScore)
+
+  return (
+    <div className="card" style={{ padding: '20px' }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>
+        Site Performance Overview
+      </h3>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '16px' }}>
+        {[
+          { score: safetyScore, label: 'Safety Rating', color: safeColor, type: 'safety' },
+          { score: contractScore, label: 'Contract Health', color: conColor, type: 'contract' },
+        ].map(({ score, label, color, type }) => (
+          <div key={label}>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+              {label}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '48px', fontWeight: 700, color }}>
+                {score ?? '—'}
+              </span>
+              {score != null && (
+                <span style={{ fontSize: '20px', color: 'var(--text-secondary)', marginBottom: '6px' }}>/100</span>
+              )}
+            </div>
+            <ScoreBar score={score} color={color} />
+            <p style={{ fontSize: '12px', color, fontWeight: 600, marginTop: '6px' }}>
+              {scoreStatus(score, type)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+        {[
+          { count: riskCount?.high ?? 0, label: 'High risks', color: 'var(--danger)', bg: 'var(--danger-bg)', border: 'var(--danger)' },
+          { count: riskCount?.medium ?? 0, label: 'Medium risks', color: 'var(--warning)', bg: 'var(--warning-bg)', border: 'var(--warning)' },
+          { count: riskCount?.low ?? 0, label: 'Low risks', color: 'var(--success)', bg: 'var(--success-bg)', border: 'var(--success)' },
+        ].map(({ count, label, color, bg, border }) => (
+          <div key={label} style={{
+            background: bg, border: `1px solid ${border}`,
+            borderRadius: 'var(--radius-md)', padding: '12px', textAlign: 'center',
+          }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, color, lineHeight: 1 }}>{count}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Shared heading ─────────────────────────────────────────────────────────────
 
 function SectionHeading({ children, sub }) {
@@ -42,6 +131,7 @@ function OverviewTab({ report }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <ScoreStrip report={report} />
+      <ProgressSummaryCard report={report} />
 
       {summary && (
         <div className="card" style={{ borderLeft: '3px solid var(--accent)', padding: '16px' }}>
@@ -346,6 +436,16 @@ export default function ReportPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Print-only branded header */}
+      <div className="print-header" style={{ display: 'none' }}>
+        <div>
+          <div className="print-header-logo">SiteIQ — Construction Intelligence</div>
+          <div className="print-header-meta">
+            {[projectInfo.projectName, projectInfo.company, new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), displayId].filter(Boolean).join(' · ')}
+          </div>
+        </div>
+      </div>
 
       {/* Report header */}
       <div style={{

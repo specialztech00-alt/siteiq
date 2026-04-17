@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ClipboardList, Search, ArrowUpDown } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
+import useAuthStore from '../store/useAuthStore'
 
 function SectionLabel({ children }) {
   return (
@@ -27,18 +28,14 @@ const SEVERITY_COLORS = {
   Low: 'var(--success)',
 }
 
-function loadStatuses() {
-  try { return JSON.parse(localStorage.getItem('siteiq-risk-statuses') || '{}') } catch { return {} }
-}
-
-function saveStatuses(statuses) {
-  localStorage.setItem('siteiq-risk-statuses', JSON.stringify(statuses))
-}
-
 export default function RiskRegisterPage() {
   const navigate = useNavigate()
-  const { analyses } = useAppStore()
-  const [statuses, setStatuses] = useState(loadStatuses)
+  const { user } = useAuthStore()
+  const { analyses, riskStatuses, syncRiskStatus, loadRiskStatuses } = useAppStore()
+
+  useEffect(() => {
+    if (user?.id) loadRiskStatuses(user.id)
+  }, [user?.id])
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
   const [filterSeverity, setFilterSeverity] = useState('All')
@@ -55,18 +52,18 @@ export default function RiskRegisterPage() {
           id,
           analysisId: analysis.id,
           projectName: analysis.projectName || 'Unnamed Project',
-          date: analysis.date,
+          date: analysis.createdAt,
           title: risk.title || risk.name || `Risk ${idx + 1}`,
           description: risk.description || risk.detail || '',
           severity: risk.severity || risk.level || 'Medium',
           category: risk.category || risk.type || 'Safety',
           recommendation: risk.recommendation || risk.action || '',
-          status: statuses[id] || 'Open',
+          status: riskStatuses[id] || 'Open',
         })
       })
     })
     return risks
-  }, [analyses, statuses])
+  }, [analyses, riskStatuses])
 
   // Filtered + sorted
   const filtered = useMemo(() => {
@@ -93,9 +90,7 @@ export default function RiskRegisterPage() {
   }, [allRisks, search, filterStatus, filterSeverity, sortBy])
 
   function handleStatusChange(riskId, newStatus) {
-    const next = { ...statuses, [riskId]: newStatus }
-    setStatuses(next)
-    saveStatuses(next)
+    syncRiskStatus(riskId, newStatus, user?.id)
   }
 
   // Summary counts

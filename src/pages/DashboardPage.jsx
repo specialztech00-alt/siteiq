@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ScanLine,
@@ -16,47 +17,6 @@ import CircularScore from '../components/CircularScore.jsx'
 import StarRating from '../components/StarRating.jsx'
 import { useWeather } from '../components/WeatherWidget.jsx'
 import { getConstructionScore, getRegionalRiskSummary, getFloodRiskAdvice } from '../lib/geoData.js'
-
-// ── Static demo data ──────────────────────────────────────────────────────────
-
-const RECENT_ANALYSES = [
-  {
-    id: 'SITEIQ-A1B2C3',
-    projectName: 'Foundation Block — Phase 1',
-    location: 'Lagos',
-    date: '12 Apr 2026',
-    safetyScore: 74,
-    contractScore: 81,
-    status: 'Complete',
-  },
-  {
-    id: 'SITEIQ-D4E5F6',
-    projectName: 'Office Complex — Structural',
-    location: 'Abuja (FCT)',
-    date: '10 Apr 2026',
-    safetyScore: 42,
-    contractScore: 68,
-    status: 'Complete',
-  },
-  {
-    id: 'SITEIQ-G7H8I9',
-    projectName: 'Residential Estate — Block C',
-    location: 'Rivers',
-    date: '8 Apr 2026',
-    safetyScore: 88,
-    contractScore: 92,
-    status: 'Complete',
-  },
-  {
-    id: 'SITEIQ-J0K1L2',
-    projectName: 'Industrial Shed — Kano North',
-    location: 'Kano',
-    date: '5 Apr 2026',
-    safetyScore: 31,
-    contractScore: 55,
-    status: 'Complete',
-  },
-]
 
 // ── Greeting helpers ──────────────────────────────────────────────────────────
 
@@ -233,7 +193,14 @@ function WeatherMini({ stateName }) {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { selectedState, reportData } = useAppStore()
+  const { selectedState, reportData, analyses, loadAnalysesFromDb, loadRiskStatuses } = useAppStore()
+
+  useEffect(() => {
+    if (user?.id) {
+      loadAnalysesFromDb(user.id)
+      loadRiskStatuses(user.id)
+    }
+  }, [user?.id])
 
   const firstName = (user?.name || user?.email || 'there').split(/[\s@]/)[0]
   const now = new Date()
@@ -246,8 +213,13 @@ export default function DashboardPage() {
   const riskSummary = getRegionalRiskSummary(selectedState)
   const floodAdvice = getFloodRiskAdvice(selectedState)
 
-  const avgSafety = Math.round(RECENT_ANALYSES.reduce((s, a) => s + a.safetyScore, 0) / RECENT_ANALYSES.length)
-  const avgContract = Math.round(RECENT_ANALYSES.reduce((s, a) => s + a.contractScore, 0) / RECENT_ANALYSES.length)
+  const recentAnalyses = analyses.slice(0, 4)
+  const avgSafety = analyses.length
+    ? Math.round(analyses.reduce((s, a) => s + (a.reportData?.safetyScore ?? 0), 0) / analyses.length)
+    : 0
+  const avgContract = analyses.length
+    ? Math.round(analyses.reduce((s, a) => s + (a.reportData?.contractScore ?? 0), 0) / analyses.length)
+    : 0
 
   return (
     <div className="fade-in" style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto' }}>
@@ -278,7 +250,7 @@ export default function DashboardPage() {
 
       {/* ── Stats strip ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <StatCard label="Analyses Run" value={RECENT_ANALYSES.length} sub="This month" />
+        <StatCard label="Analyses Run" value={analyses.length} sub="Total" />
         <StatCard label="Avg Safety Score" value={`${avgSafety}`} sub="Out of 100" accent={avgSafety >= 70 ? 'var(--success)' : avgSafety >= 45 ? 'var(--warning)' : 'var(--danger)'} />
         <StatCard label="Avg Contract Score" value={`${avgContract}`} sub="Out of 100" accent="var(--accent)" />
         <StatCard label="Selected State" value={selectedState.replace(' (FCT)', '')} sub={`Score: ${geoScore.score}/10 — ${geoScore.label}`} accent="var(--text-primary)" />
@@ -299,8 +271,18 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {RECENT_ANALYSES.map((a, i) => {
-            const combined = a.safetyScore + a.contractScore
+          {recentAnalyses.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '12px' }}>No analyses yet</p>
+              <button className="btn-primary" onClick={() => navigate('/app/new-analysis')} style={{ fontSize: '13px' }}>
+                Run your first analysis
+              </button>
+            </div>
+          ) : recentAnalyses.map((a, i) => {
+            const safety = a.reportData?.safetyScore ?? 0
+            const contract = a.reportData?.contractScore ?? 0
+            const combined = safety + contract
+            const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
             return (
               <div
                 key={a.id}
@@ -309,25 +291,25 @@ export default function DashboardPage() {
                   alignItems: 'center',
                   gap: '16px',
                   padding: '14px 20px',
-                  borderBottom: i < RECENT_ANALYSES.length - 1 ? '1px solid var(--border)' : 'none',
+                  borderBottom: i < recentAnalyses.length - 1 ? '1px solid var(--border)' : 'none',
                   cursor: 'pointer',
                   transition: 'background 0.15s ease',
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                onClick={() => navigate('/app/report')}
+                onClick={() => navigate('/app/archive')}
               >
-                <CircularScore score={a.safetyScore} size={48} showLabel={false} />
+                <CircularScore score={safety} size={48} showLabel={false} />
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {a.projectName}
+                      {a.projectName || 'Unnamed Project'}
                     </span>
-                    {statusBadge(a.status)}
+                    {statusBadge('Complete')}
                   </div>
                   <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
-                    {a.location} · {a.date} · {a.id}
+                    {a.selectedState || '—'} · {date} · {a.id}
                   </p>
                   <StarRating score={combined} size={12} />
                 </div>
@@ -338,9 +320,9 @@ export default function DashboardPage() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: '16px',
                     fontWeight: 700,
-                    color: a.contractScore >= 70 ? 'var(--success)' : a.contractScore >= 45 ? 'var(--warning)' : 'var(--danger)',
+                    color: contract >= 70 ? 'var(--success)' : contract >= 45 ? 'var(--warning)' : 'var(--danger)',
                   }}>
-                    {a.contractScore}
+                    {contract || '—'}
                   </span>
                 </div>
               </div>

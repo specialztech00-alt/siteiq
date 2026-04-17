@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Trash2, HardHat, TriangleAlert, CheckCircle2, Plus } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
+import useAuthStore from '../store/useAuthStore'
 import CircularScore from '../components/CircularScore'
 import StarRating from '../components/StarRating'
+import { CardSkeleton } from '../components/SkeletonCard'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -233,11 +235,18 @@ function ProjectCard({ analysis, onViewReport, onDelete }) {
 
 export default function ArchivePage() {
   const navigate = useNavigate()
-  const { analyses, setReportData, setProjectInfo, setAnalysisId, removeAnalysis } = useAppStore()
+  const { user } = useAuthStore()
+  const { analyses, setReportData, setProjectInfo, setAnalysisId, removeAnalysis, loadAnalysesFromDb } = useAppStore()
 
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
+  const [dbLoading, setDbLoading] = useState(false)
+
+  useEffect(() => {
+    setDbLoading(true)
+    loadAnalysesFromDb(user?.id).finally(() => setDbLoading(false))
+  }, [user?.id])
 
   // Unique project count
   const uniqueProjects = useMemo(
@@ -452,8 +461,17 @@ export default function ArchivePage() {
         </div>
       )}
 
+      {/* ── DB loading skeletons ── */}
+      {dbLoading && analyses.length === 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: '12px' }}>
+          <CardSkeleton lines={4} />
+          <CardSkeleton lines={4} />
+          <CardSkeleton lines={3} />
+        </div>
+      )}
+
       {/* ── Empty state: no analyses at all ── */}
-      {totalEmpty && (
+      {!dbLoading && totalEmpty && (
         <div style={{
           display: 'flex',
           flexDirection: 'column',

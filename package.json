@@ -12,7 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@huggingface/inference": "^2.8.1",
-    "@supabase/supabase-js": "^2.103.0",
+    "@supabase/supabase-js": "^2.103.3",
     "lucide-react": "^1.8.0",
     "pdfjs-dist": "^4.9.155",
     "react": "^18.3.1",

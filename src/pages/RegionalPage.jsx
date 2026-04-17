@@ -29,14 +29,14 @@ function RiskDot({ level }) {
 }
 
 function ScoreBadge({ score }) {
-  const color = score >= 70 ? 'var(--success)' : score >= 45 ? 'var(--warning)' : 'var(--danger)'
+  const color = score >= 7 ? 'var(--success)' : score >= 4 ? 'var(--warning)' : 'var(--danger)'
   return (
     <span style={{
       fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700,
       color, background: `${color}18`, padding: '2px 8px',
       borderRadius: '4px',
     }}>
-      {score}
+      {score}/10
     </span>
   )
 }
@@ -45,9 +45,9 @@ export default function RegionalPage() {
   const navigate = useNavigate()
 
   const statesWithScores = useMemo(() => {
-    return nigeriaStates.map(state => ({
+    return (nigeriaStates || []).map(state => ({
       ...state,
-      score: getConstructionScore(state.name),
+      score: getConstructionScore(state.name)?.score ?? 5,
     })).sort((a, b) => b.score - a.score)
   }, [])
 
@@ -56,7 +56,7 @@ export default function RegionalPage() {
 
   const zoneMap = useMemo(() => {
     const map = {}
-    nigeriaStates.forEach(s => {
+    ;(nigeriaStates || []).forEach(s => {
       if (!map[s.zone]) map[s.zone] = []
       map[s.zone].push(s.name)
     })
@@ -65,7 +65,7 @@ export default function RegionalPage() {
 
   const avgByZone = useMemo(() => {
     return Object.entries(zoneMap).map(([zone, names]) => {
-      const scores = names.map(n => getConstructionScore(n))
+      const scores = (names || []).map(n => getConstructionScore(n)?.score ?? 5)
       const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       return { zone, avg, count: names.length }
     }).sort((a, b) => b.avg - a.avg)
@@ -88,9 +88,9 @@ export default function RegionalPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
           { label: 'States Covered', value: nigeriaStates.length },
-          { label: 'High Risk States', value: statesWithScores.filter(s => s.score < 45).length, color: 'var(--danger)' },
-          { label: 'Medium Risk', value: statesWithScores.filter(s => s.score >= 45 && s.score < 70).length, color: 'var(--warning)' },
-          { label: 'Low Risk', value: statesWithScores.filter(s => s.score >= 70).length, color: 'var(--success)' },
+          { label: 'High Risk States', value: statesWithScores.filter(s => s.score < 4).length, color: 'var(--danger)' },
+          { label: 'Medium Risk', value: statesWithScores.filter(s => s.score >= 4 && s.score < 7).length, color: 'var(--warning)' },
+          { label: 'Low Risk', value: statesWithScores.filter(s => s.score >= 7).length, color: 'var(--success)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card" style={{ padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 700, color: color || 'var(--text-accent)', fontFamily: 'var(--font-mono)' }}>{value}</div>
@@ -140,15 +140,15 @@ export default function RegionalPage() {
       <div className="card" style={{ padding: '20px', marginBottom: '24px' }}>
         <SectionLabel>Score by Geopolitical Zone</SectionLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {avgByZone.map(({ zone, avg, count }) => {
-            const color = avg >= 70 ? 'var(--success)' : avg >= 45 ? 'var(--warning)' : 'var(--danger)'
+          {(avgByZone || []).map(({ zone, avg, count }) => {
+            const color = avg >= 7 ? 'var(--success)' : avg >= 4 ? 'var(--warning)' : 'var(--danger)'
             return (
               <div key={zone} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, width: '130px', flexShrink: 0 }}>{zone}</span>
                 <div style={{ flex: 1, height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${avg}%`, height: '100%', background: color, borderRadius: '4px', transition: 'width 0.5s ease' }} />
+                  <div style={{ width: `${avg * 10}%`, height: '100%', background: color, borderRadius: '4px', transition: 'width 0.5s ease' }} />
                 </div>
-                <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color, fontWeight: 700, width: '32px', textAlign: 'right' }}>{avg}</span>
+                <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color, fontWeight: 700, width: '40px', textAlign: 'right' }}>{avg}/10</span>
                 <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', width: '60px' }}>{count} states</span>
               </div>
             )
@@ -160,8 +160,8 @@ export default function RegionalPage() {
       <div style={{ marginBottom: '12px' }}>
         <SectionLabel>All States — Construction Risk Matrix</SectionLabel>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
-          {statesWithScores.map(state => {
-            const scoreColor = state.score >= 70 ? 'var(--success)' : state.score >= 45 ? 'var(--warning)' : 'var(--danger)'
+          {(statesWithScores || []).map(state => {
+            const scoreColor = state.score >= 7 ? 'var(--success)' : state.score >= 4 ? 'var(--warning)' : 'var(--danger)'
             return (
               <div
                 key={state.name}
@@ -187,7 +187,7 @@ export default function RegionalPage() {
 
                 {/* Risk dots row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  {Object.entries(state.risks).map(([key, level]) => (
+                  {Object.entries(state.risks || {}).map(([key, level]) => (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                       <RiskDot level={level} />
                       <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>
@@ -199,7 +199,7 @@ export default function RegionalPage() {
 
                 {/* Score bar */}
                 <div style={{ marginTop: '10px', height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${state.score}%`, height: '100%', background: scoreColor, borderRadius: '2px' }} />
+                  <div style={{ width: `${state.score * 10}%`, height: '100%', background: scoreColor, borderRadius: '2px' }} />
                 </div>
               </div>
             )
