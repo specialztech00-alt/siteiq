@@ -97,6 +97,10 @@ const useAuthStore = create(
         const profile = await fetchProfile(data.user.id)
         const user = mapUser(data.user, profile)
         set({ user, profile, isAuthenticated: true, authError: null })
+        if (!localStorage.getItem('siteiq-theme')) {
+          localStorage.setItem('siteiq-theme', 'light')
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
         return user
       },
 
@@ -133,12 +137,20 @@ const useAuthStore = create(
             const profile = { full_name: name, company, role }
             const user = mapUser(signInData.user, profile)
             set({ user, profile, isAuthenticated: true, authError: null })
+            if (!localStorage.getItem('siteiq-theme')) {
+              localStorage.setItem('siteiq-theme', 'light')
+              document.documentElement.setAttribute('data-theme', 'light')
+            }
             return user
           }
         } catch {}
 
         const user = mapUser(data.user, { full_name: name, company, role })
         set({ user, profile: { full_name: name, company, role }, isAuthenticated: true, authError: null })
+        if (!localStorage.getItem('siteiq-theme')) {
+          localStorage.setItem('siteiq-theme', 'light')
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
         return user
       },
 

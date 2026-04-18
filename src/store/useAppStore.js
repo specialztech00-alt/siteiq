@@ -54,7 +54,7 @@ const useAppStore = create((set, get) => ({
 
   // ── UI ────────────────────────────────────────────────────────────────────
   activeTab: 0,
-  theme: localStorage.getItem('siteiq-theme') || 'dark',
+  theme: localStorage.getItem('siteiq-theme') || 'light',
   selectedState: localStorage.getItem('siteiq-state') || 'Lagos',
 
   // ── Actions ───────────────────────────────────────────────────────────────
