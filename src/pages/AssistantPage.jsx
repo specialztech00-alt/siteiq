@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { HardHat, Send, Plus } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 import { chatWithAssistant, parseFollowUps, cleanResponseText } from '../lib/assistantApi'
+import { buildAppContext } from '../lib/contextBuilder'
+import { buildChatSystemPrompt } from '../lib/prompts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -457,10 +459,11 @@ function ChatPanel({ conversation, isTyping, onSend, onClear, onTitleChange }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AssistantPage() {
+  const store = useAppStore()
   const {
     conversations, activeConversationId, selectedState, analyses,
     setActiveConversationId, addConversation, updateConversation, deleteConversation,
-  } = useAppStore()
+  } = store
 
   const [isTyping, setIsTyping] = useState(false)
   const [search, setSearch] = useState('')
@@ -492,7 +495,9 @@ export default function AssistantPage() {
 
     try {
       const history = conv.messages.map(m => ({ role: m.role, content: m.content }))
-      const raw = await chatWithAssistant({ messages: history, selectedState, recentProjectTitle })
+      const appContext = buildAppContext(useAppStore.getState())
+      const systemPromptOverride = buildChatSystemPrompt(appContext)
+      const raw = await chatWithAssistant({ messages: history, selectedState, recentProjectTitle, systemPromptOverride })
       const followUps = parseFollowUps(raw)
       const content = cleanResponseText(raw)
 

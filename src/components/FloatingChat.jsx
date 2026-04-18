@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAppStore from '../store/useAppStore'
 import { chatWithAssistant, parseFollowUps, cleanResponseText } from '../lib/assistantApi'
+import { buildAppContext } from '../lib/contextBuilder'
+import { buildChatSystemPrompt } from '../lib/prompts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -49,17 +51,26 @@ function SendArrowIcon() {
 
 // ── Quick questions ───────────────────────────────────────────────────────────
 
-const QUICK_QUESTIONS = [
-  'Any weather risks today?',
-  'Summarise my latest report',
-  'What\'s the LD clause mean?',
+const QUICK_QUESTIONS_WITH_REPORT = [
+  'Explain the highest risk in detail',
+  'What are my most urgent PM actions?',
+  'What should I do about the contract penalty clause?',
+  'Is it safe to work today in my selected state?',
+]
+
+const QUICK_QUESTIONS_NO_REPORT = [
+  'What are common risks in Lagos excavation?',
+  'Explain liquidated damages simply',
+  'What PPE is needed for roofing works?',
+  'What are the ground conditions in Abuja?',
 ]
 
 // ── Floating chat component ───────────────────────────────────────────────────
 
 export default function FloatingChat() {
   const navigate = useNavigate()
-  const { selectedState, analyses } = useAppStore()
+  const store = useAppStore()
+  const { selectedState, analyses, reportData } = store
 
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([])
@@ -110,7 +121,9 @@ export default function FloatingChat() {
 
     try {
       const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
-      const raw = await chatWithAssistant({ messages: history, selectedState, recentProjectTitle })
+      const appContext = buildAppContext(useAppStore.getState())
+      const systemPromptOverride = buildChatSystemPrompt(appContext)
+      const raw = await chatWithAssistant({ messages: history, selectedState, recentProjectTitle, systemPromptOverride })
       const followUps = parseFollowUps(raw)
       const responseContent = cleanResponseText(raw)
 
@@ -215,7 +228,7 @@ export default function FloatingChat() {
                   Quick questions
                 </p>
                 <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                  {QUICK_QUESTIONS.map(q => (
+                  {(reportData ? QUICK_QUESTIONS_WITH_REPORT : QUICK_QUESTIONS_NO_REPORT).map(q => (
                     <button key={q} onClick={() => sendMessage(q)} style={{
                       fontSize: '12px', padding: '6px 10px', borderRadius: '20px',
                       background: 'var(--bg-secondary)', border: '1px solid var(--border)',

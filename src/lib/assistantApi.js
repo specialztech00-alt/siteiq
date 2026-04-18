@@ -38,9 +38,10 @@ export function cleanResponseText(text) {
  * @param {Array} messages - [{role:'user'|'assistant', content:string}]
  * @param {string} selectedState - Current Nigerian state
  * @param {string} recentProjectTitle - Title of most recent analysis
+ * @param {string} systemPromptOverride - Full system prompt (overrides default when provided)
  */
-export async function chatWithAssistant({ messages, selectedState, recentProjectTitle }) {
-  const systemPrompt = buildAssistantPrompt({ selectedState, recentProjectTitle })
+export async function chatWithAssistant({ messages, selectedState, recentProjectTitle, systemPromptOverride }) {
+  const systemPrompt = systemPromptOverride ?? buildAssistantPrompt({ selectedState, recentProjectTitle })
 
   const response = await fetch(CLAUDE_API_URL, {
     method: 'POST',

@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { chatWithContract } from '../lib/claude.js'
 import useAppStore from '../store/useAppStore.js'
+import { buildAppContext } from '../lib/contextBuilder.js'
+import { buildChatSystemPrompt } from '../lib/prompts.js'
+import { chatWithAssistant } from '../lib/assistantApi.js'
 
 const QUICK_QUESTIONS = [
   'What are the LADs and how are they calculated?',
@@ -70,11 +73,12 @@ function TypingIndicator() {
 }
 
 export default function ContractChat() {
-  const chatHistory     = useAppStore(s => s.chatHistory)
-  const addChatMessage  = useAppStore(s => s.addChatMessage)
-  const isChatLoading   = useAppStore(s => s.isChatLoading)
+  const chatHistory      = useAppStore(s => s.chatHistory)
+  const addChatMessage   = useAppStore(s => s.addChatMessage)
+  const isChatLoading    = useAppStore(s => s.isChatLoading)
   const setIsChatLoading = useAppStore(s => s.setIsChatLoading)
-  const docText         = useAppStore(s => s.docText)
+  const docText          = useAppStore(s => s.docText)
+  const selectedState    = useAppStore(s => s.selectedState)
 
   const [input, setInput]   = useState('')
   const [error, setError]   = useState(null)
@@ -101,7 +105,9 @@ export default function ContractChat() {
         role: m.role === 'user' ? 'user' : 'assistant',
         content: m.content,
       }))
-      const reply = await chatWithContract(messages, docText)
+      const appContext = buildAppContext(useAppStore.getState())
+      const systemPromptOverride = buildChatSystemPrompt(appContext)
+      const reply = await chatWithAssistant({ messages, selectedState, systemPromptOverride })
       addChatMessage({ role: 'assistant', content: reply })
     } catch (err) {
       setError(err.message)
