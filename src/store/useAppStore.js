@@ -304,6 +304,7 @@ const useAppStore = create((set, get) => ({
         detectedObjects: hfDetections,
         contractText: docText,
         nerEntities,
+        photoFiles,
       })
 
       // ── Step 5: Assemble ──────────────────────────────────────────────────

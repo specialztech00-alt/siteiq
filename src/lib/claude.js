@@ -16,7 +16,7 @@ function getApiKey() {
   return key
 }
 
-async function callClaude({ systemPrompt, messages, maxTokens = 4096 }) {
+export async function callClaude({ systemPrompt, messages, maxTokens = 4096 }) {
   const response = await fetch(CLAUDE_API_URL, {
     method: 'POST',
     headers: {
@@ -42,17 +42,27 @@ async function callClaude({ systemPrompt, messages, maxTokens = 4096 }) {
   return data.content[0].text
 }
 
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result.split(',')[1])
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 /**
  * Main analysis function — passes all context to Claude and returns structured report
  * @param {Object} payload
- * @param {string} payload.siteDescription  - plain-text site conditions
- * @param {string[]} payload.detectedObjects - HF vision detections
- * @param {string} payload.contractText      - extracted contract text
- * @param {Array}  payload.nerEntities       - HF NER entities
- * @param {Function} payload.onStep          - progress callback(stepLabel)
+ * @param {string}   payload.siteDescription  - plain-text site conditions
+ * @param {string[]} payload.detectedObjects  - HF vision detections
+ * @param {string}   payload.contractText     - extracted contract text
+ * @param {Array}    payload.nerEntities      - HF NER entities
+ * @param {File[]}   payload.photoFiles       - original site photos for Claude vision
+ * @param {Function} payload.onStep           - progress callback(stepLabel)
  * @returns {Object} parsed report JSON
  */
-export async function analyseSite({ siteDescription, detectedObjects, contractText, nerEntities, onStep }) {
+export async function analyseSite({ siteDescription, detectedObjects, contractText, nerEntities, photoFiles, onStep }) {
   try {
     onStep?.('Claude: generating safety assessment')
     const { systemPrompt, userMessage } = buildAnalysisPrompt({
@@ -62,10 +72,27 @@ export async function analyseSite({ siteDescription, detectedObjects, contractTe
       nerEntities,
     })
 
+    // Build message content — prepend image blocks if photos are available
+    const userContent = []
+    if (photoFiles && photoFiles.length > 0) {
+      for (const file of photoFiles.slice(0, 4)) {
+        try {
+          const base64Data = await fileToBase64(file)
+          userContent.push({
+            type: 'image',
+            source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64Data },
+          })
+        } catch (err) {
+          console.warn('Failed to encode photo:', err.message)
+        }
+      }
+    }
+    userContent.push({ type: 'text', text: userMessage })
+
     onStep?.('Claude: analysing contract obligations')
     const rawText = await callClaude({
       systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: 'user', content: userContent }],
       maxTokens: 6000,
     })
 

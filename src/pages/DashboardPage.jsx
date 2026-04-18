@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ScanLine,
@@ -11,6 +11,7 @@ import {
   Archive,
   Plus,
 } from 'lucide-react'
+import { callClaude } from '../lib/claude.js'
 import useAppStore from '../store/useAppStore.js'
 import useAuthStore from '../store/useAuthStore.js'
 import ErrorMessage from '../components/ErrorMessage.jsx'
@@ -185,6 +186,93 @@ function WeatherMini({ stateName }) {
           <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>{value}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Portfolio Intelligence ────────────────────────────────────────────────────
+
+function PortfolioIntelligence({ analyses }) {
+  const [insight, setInsight] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const ranRef = useRef(false)
+
+  useEffect(() => {
+    if (analyses.length < 2 || ranRef.current) return
+    ranRef.current = true
+    setLoading(true)
+
+    const summary = analyses.slice(0, 10).map((a, i) => {
+      const safety = a.reportData?.safetyScore ?? 'N/A'
+      const contract = a.reportData?.contractScore ?? 'N/A'
+      const high = a.reportData?.riskCount?.high ?? 0
+      return `${i + 1}. ${a.projectName || 'Unnamed'} — ${a.selectedState || 'Unknown state'} — Safety: ${safety}/100, Contract: ${contract}/100, High risks: ${high}`
+    }).join('\n')
+
+    const prompt = `You are a construction portfolio analyst for a Nigerian PM firm.
+
+Here are ${analyses.length} recent site analyses:
+${summary}
+
+Provide 3-4 cross-project portfolio insights. Identify:
+- Recurring safety weaknesses or patterns across projects
+- Which states or project types carry the most risk
+- Contract health trends and financial exposure patterns
+- 1-2 specific recommendations to improve overall portfolio performance
+
+Be direct and data-driven. Plain text only. 2-3 sentences per insight. Label each with a short bold title.`
+
+    callClaude({
+      systemPrompt: 'You are a construction portfolio risk analyst. Be concise and insight-driven.',
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 600,
+    }).then(text => {
+      setInsight(text)
+      setLoading(false)
+    }).catch(err => {
+      setError(err.message)
+      setLoading(false)
+    })
+  }, [analyses.length])
+
+  if (analyses.length < 2) return null
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '16px 20px',
+      marginBottom: '24px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+        <Sparkles size={15} style={{ color: 'var(--accent)' }} />
+        <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          Portfolio Intelligence
+        </h3>
+        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
+          Patterns across {analyses.length} analyses
+        </span>
+      </div>
+
+      {loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {[85, 70, 90, 60].map((w, i) => (
+            <div key={i} style={{ height: '13px', width: `${w}%`, borderRadius: '4px', background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <p style={{ fontSize: '13px', color: 'var(--danger)' }}>Could not load insights — {error}</p>
+      )}
+
+      {insight && !loading && (
+        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+          {insight}
+        </div>
+      )}
     </div>
   )
 }
@@ -400,6 +488,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ── Portfolio Intelligence ──────────────────────────────────────────── */}
+      <PortfolioIntelligence analyses={analyses} />
 
       {/* ── Quick actions ────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: '24px' }}>

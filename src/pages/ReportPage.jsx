@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, HardHat, ScrollText, ClipboardList, MessageSquare, Share2, Printer, CheckCircle2 } from 'lucide-react'
+import { LayoutDashboard, HardHat, ScrollText, ClipboardList, MessageSquare, Share2, Printer, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { callClaude } from '../lib/claude.js'
 import ScoreStrip from '../components/ScoreStrip.jsx'
 import RiskCard from '../components/RiskCard.jsx'
 import ObligationTable from '../components/ObligationTable.jsx'
@@ -121,6 +122,96 @@ function SectionHeading({ children, sub }) {
   )
 }
 
+// ── AI Reasoning Panel ─────────────────────────────────────────────────────────
+
+function AIReasoningPanel({ report }) {
+  const [open, setOpen] = useState(false)
+  const [reasoning, setReasoning] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const loadedRef = useRef(false)
+
+  function handleToggle() {
+    const next = !open
+    setOpen(next)
+    if (!next || loadedRef.current) return
+
+    loadedRef.current = true
+    setLoading(true)
+
+    const topRisks = (report.risks ?? []).filter(r => r.severity === 'High').slice(0, 3).map(r => r.title).join(', ') || 'none'
+    const topObligs = (report.obligations ?? []).slice(0, 3).map(o => o.clause || o.title || 'clause').join(', ') || 'none'
+
+    const prompt = `A construction site analysis returned the following scores:
+- Safety Score: ${report.safetyScore}/100
+- Contract Health Score: ${report.contractScore}/100
+- Risk breakdown: ${report.riskCount?.high ?? 0} high, ${report.riskCount?.medium ?? 0} medium, ${report.riskCount?.low ?? 0} low risks
+- Top high risks: ${topRisks}
+- Key contract obligations: ${topObligs}
+- Executive summary: ${report.summary ?? 'Not provided'}
+
+Explain in plain English, as if speaking to a site manager:
+1. Why the safety score is ${report.safetyScore} — what drove it up or down
+2. Why the contract score is ${report.contractScore} — key factors
+3. What the most important thing to act on this week is
+
+Be direct, practical, and non-technical. 2-3 sentences per point. No bullet lists, just flowing paragraphs.`
+
+    callClaude({
+      systemPrompt: 'You explain AI-generated construction site analysis scores to non-technical Nigerian site managers.',
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 500,
+    }).then(text => {
+      setReasoning(text)
+      setLoading(false)
+    }).catch(err => {
+      setError(err.message)
+      setLoading(false)
+    })
+  }
+
+  return (
+    <div className="card" style={{ overflow: 'hidden' }}>
+      <button
+        onClick={handleToggle}
+        style={{
+          width: '100%', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Sparkles size={15} style={{ color: 'var(--accent)' }} />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Why these scores?
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Claude AI Reasoning</span>
+        </div>
+        {open ? <ChevronUp size={15} style={{ color: 'var(--text-tertiary)' }} /> : <ChevronDown size={15} style={{ color: 'var(--text-tertiary)' }} />}
+      </button>
+
+      {open && (
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '14px' }}>
+              {[90, 75, 85, 60, 80].map((w, i) => (
+                <div key={i} style={{ height: '13px', width: `${w}%`, borderRadius: '4px', background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ))}
+            </div>
+          )}
+          {error && (
+            <p style={{ fontSize: '13px', color: 'var(--danger)', paddingTop: '14px' }}>Could not load reasoning — {error}</p>
+          )}
+          {reasoning && !loading && (
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.75, paddingTop: '14px', whiteSpace: 'pre-wrap' }}>
+              {reasoning}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Overview tab ───────────────────────────────────────────────────────────────
 
 function OverviewTab({ report }) {
@@ -132,6 +223,7 @@ function OverviewTab({ report }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <ScoreStrip report={report} />
       <ProgressSummaryCard report={report} />
+      <AIReasoningPanel report={report} />
 
       {summary && (
         <div className="card" style={{ borderLeft: '3px solid var(--accent)', padding: '16px' }}>
