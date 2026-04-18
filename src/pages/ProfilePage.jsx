@@ -62,15 +62,27 @@ export default function ProfilePage() {
 
       {/* Avatar + name strip */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <div style={{
-          width: '64px', height: '64px', borderRadius: '50%',
-          background: 'var(--accent)', color: '#0f1114',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '22px', fontWeight: 700, fontFamily: 'var(--font-display)',
-          flexShrink: 0,
-        }}>
-          {initials}
-        </div>
+        {user?.avatar ? (
+          <img
+            src={user.avatar}
+            alt={name || 'Avatar'}
+            style={{
+              width: '72px', height: '72px', borderRadius: '50%',
+              border: '2px solid var(--accent)',
+              objectFit: 'cover', flexShrink: 0,
+            }}
+          />
+        ) : (
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: 'var(--accent)', color: '#0f1114',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '22px', fontWeight: 700, fontFamily: 'var(--font-display)',
+            flexShrink: 0,
+          }}>
+            {initials}
+          </div>
+        )}
         <div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>{name || 'Unnamed User'}</div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>{user?.email}</div>

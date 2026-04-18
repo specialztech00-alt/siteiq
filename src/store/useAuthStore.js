@@ -68,7 +68,16 @@ const useAuthStore = create(
             const current = get()
             if (current.isAuthenticated && current.user?.id === session.user.id) return
             const profile = await fetchProfile(session.user.id)
-            set({ user: mapUser(session.user, profile), profile, isAuthenticated: true })
+            const avatar = session.user.user_metadata?.avatar_url ?? null
+            set({
+              user: { ...mapUser(session.user, profile), avatar },
+              profile,
+              isAuthenticated: true,
+            })
+            if (!localStorage.getItem('siteiq-theme')) {
+              localStorage.setItem('siteiq-theme', 'light')
+              document.documentElement.setAttribute('data-theme', 'light')
+            }
           }
           if (event === 'SIGNED_OUT') {
             set({ user: null, profile: null, isAuthenticated: false })
@@ -152,6 +161,20 @@ const useAuthStore = create(
           document.documentElement.setAttribute('data-theme', 'light')
         }
         return user
+      },
+
+      signInWithGoogle: async () => {
+        if (!supabase) return { error: 'Google sign in requires Supabase configuration' }
+        try {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin + '/app/dashboard' },
+          })
+          if (error) throw error
+          return { data }
+        } catch (err) {
+          return { error: err.message }
+        }
       },
 
       updateProfile: async (updates) => {

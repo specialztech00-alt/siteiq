@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { supabase } from './lib/supabase.js'
+import useAuthStore from './store/useAuthStore.js'
 import LandingPage from './pages/LandingPage.jsx'
 import SignInPage from './pages/SignInPage.jsx'
 import SignUpPage from './pages/SignUpPage.jsx'
@@ -29,6 +32,23 @@ const AppLayout = ({ children }) => (
 )
 
 export default function App() {
+  useEffect(() => {
+    if (!supabase) return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      const { user: sbUser } = session
+      const avatar = sbUser.user_metadata?.avatar_url ?? null
+      const name = sbUser.user_metadata?.full_name ?? sbUser.email.split('@')[0]
+      useAuthStore.setState(state => {
+        if (state.isAuthenticated && state.user?.id === sbUser.id) return {}
+        return {
+          user: { id: sbUser.id, email: sbUser.email, name, avatar, company: null, role: null },
+          isAuthenticated: true,
+        }
+      })
+    })
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>

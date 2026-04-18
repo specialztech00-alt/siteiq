@@ -293,7 +293,7 @@ export default function TopBar({ onMenuToggle, sidebarCollapsed }) {
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              background: 'var(--accent-dim)',
+              background: user?.avatar ? 'transparent' : 'var(--accent-dim)',
               color: 'var(--text-accent)',
               fontSize: '12px',
               fontWeight: 700,
@@ -303,9 +303,13 @@ export default function TopBar({ onMenuToggle, sidebarCollapsed }) {
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.2s ease',
+              overflow: 'hidden',
+              padding: 0,
             }}
           >
-            {initials}
+            {user?.avatar
+              ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : initials}
           </button>
 
           {showProfile && (
@@ -323,7 +327,7 @@ export default function TopBar({ onMenuToggle, sidebarCollapsed }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  background: 'var(--accent-dim)',
+                  background: user?.avatar ? 'transparent' : 'var(--accent-dim)',
                   color: 'var(--text-accent)',
                   fontSize: '14px',
                   fontWeight: 700,
@@ -332,8 +336,11 @@ export default function TopBar({ onMenuToggle, sidebarCollapsed }) {
                   justifyContent: 'center',
                   border: '1px solid var(--accent)',
                   flexShrink: 0,
+                  overflow: 'hidden',
                 }}>
-                  {initials}
+                  {user?.avatar
+                    ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials}
                 </div>
                 <div style={{ overflow: 'hidden', flex: 1 }}>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
