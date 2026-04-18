@@ -14,7 +14,7 @@ import {
   getWeatherDescription,
 } from '../lib/weather.js'
 import { DEMO_SCENARIOS, FALLBACK_DEMO_REPORT } from '../lib/prompts.js'
-import { detectObjects, extractEntities } from '../lib/huggingface.js'
+import { detectAllPhotos, extractEntities } from '../lib/huggingface.js'
 import { extractTextFromFile } from '../lib/pdfParser.js'
 import { analyseSite } from '../lib/claude.js'
 
@@ -141,6 +141,108 @@ function WeatherPreview({ stateName }) {
   )
 }
 
+const MAX_PHOTOS = 5
+
+// ── MultiPhotoUploadZone ──────────────────────────────────────────────────────
+
+function MultiPhotoUploadZone({ photoFiles, photoPreviews, onFiles, onRemove, maxPhotos }) {
+  const [dragging, setDragging] = useState(false)
+  const inputRef = useRef(null)
+  const hasPhotos = photoFiles.length > 0
+
+  function handleDrop(e) {
+    e.preventDefault()
+    setDragging(false)
+    if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files)
+  }
+
+  return (
+    <div
+      style={{
+        background: dragging ? 'var(--accent-dim)' : 'var(--bg-card)',
+        border: `1.5px dashed ${hasPhotos ? 'var(--success)' : dragging ? 'var(--accent)' : 'var(--border)'}`,
+        borderRadius: 'var(--radius-lg)',
+        padding: '16px',
+        transition: 'border-color 0.2s, background 0.2s',
+        minHeight: '180px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+      }}
+      onDragOver={e => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        style={{ display: 'none' }}
+        onChange={e => e.target.files.length && onFiles(e.target.files)}
+      />
+
+      {!hasPhotos ? (
+        <div
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer' }}
+          onClick={() => inputRef.current?.click()}
+        >
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Camera size={20} color="var(--text-accent)" />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>Upload Site Photos</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>JPG, PNG, WEBP · Max 10MB each · Up to {maxPhotos}</p>
+          </div>
+          <span style={{ fontSize: '12px', color: 'var(--text-accent)', fontWeight: 500 }}>Browse files or drag and drop</span>
+        </div>
+      ) : (
+        <>
+          {/* Count badge + add more */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', background: 'var(--success-bg)', color: 'var(--success)' }}>
+              ✓ {photoFiles.length} photo{photoFiles.length > 1 ? 's' : ''} selected
+            </span>
+            {photoFiles.length < maxPhotos && (
+              <button
+                onClick={() => inputRef.current?.click()}
+                style={{ fontSize: '12px', color: 'var(--text-accent)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Plus size={12} /> Add more
+              </button>
+            )}
+          </div>
+
+          {/* Thumbnail grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: '8px' }}>
+            {photoPreviews.map((url, i) => (
+              <div key={i} style={{ position: 'relative' }}>
+                <img
+                  src={url}
+                  alt={`Site photo ${i + 1}`}
+                  style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 'var(--radius-sm)', display: 'block' }}
+                />
+                <button
+                  onClick={() => onRemove(i)}
+                  style={{
+                    position: 'absolute', top: '3px', right: '3px',
+                    width: '18px', height: '18px', borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.65)', border: 'none', cursor: 'pointer',
+                    color: '#fff', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── FileUploadZone ────────────────────────────────────────────────────────────
 
 function FileUploadZone({ accept, icon, title, subtitle, file, onFile, onRemove, extracting, extracted, children }) {
@@ -257,7 +359,7 @@ function FileUploadZone({ accept, icon, title, subtitle, file, onFile, onRemove,
 
 export default function NewAnalysisPage() {
   const navigate = useNavigate()
-  const { selectedState, setSelectedState, setReportData, setProjectInfo, setAnalysisId, addAnalysis } = useAppStore()
+  const { selectedState, setSelectedState, setReportData, setProjectInfo, setAnalysisId, addAnalysis, setDocText: setStoreDocText } = useAppStore()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [projectInfo, setLocalProjectInfo] = useState({
@@ -269,8 +371,8 @@ export default function NewAnalysisPage() {
     constructionPhase: '',
     workerCount: '',
   })
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoFiles, setPhotoFiles] = useState([])
+  const [photoPreviews, setPhotoPreviews] = useState([])
   const [docFile, setDocFile] = useState(null)
   const [docText, setDocText] = useState('')
   const [docExtracting, setDocExtracting] = useState(false)
@@ -299,25 +401,23 @@ export default function NewAnalysisPage() {
 
   const VALID_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
-  function handlePhotoFile(file) {
-    if (!VALID_IMAGE_TYPES.includes(file.type)) {
-      setFileError('Unsupported file type. Please upload JPG, PNG, or WEBP.')
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setFileError('File too large. Maximum size is 10MB.')
-      return
-    }
+  function handlePhotoFiles(files) {
+    const fileArray = Array.from(files)
+    const invalid = fileArray.find(f => !VALID_IMAGE_TYPES.includes(f.type))
+    if (invalid) { setFileError('Unsupported file type. Please upload JPG, PNG, or WEBP.'); return }
+    const tooBig = fileArray.find(f => f.size > 10 * 1024 * 1024)
+    if (tooBig) { setFileError('One or more files exceed 10MB.'); return }
     setFileError(null)
-    setPhotoFile(file)
-    const url = URL.createObjectURL(file)
-    setPhotoPreview(url)
+    const combined = [...photoFiles, ...fileArray].slice(0, MAX_PHOTOS)
+    const newPreviews = combined.map((f, i) => photoPreviews[i] ?? URL.createObjectURL(f))
+    setPhotoFiles(combined)
+    setPhotoPreviews(newPreviews)
   }
 
-  function removePhoto() {
-    if (photoPreview) URL.revokeObjectURL(photoPreview)
-    setPhotoFile(null)
-    setPhotoPreview(null)
+  function removePhoto(index) {
+    URL.revokeObjectURL(photoPreviews[index])
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index))
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index))
   }
 
   // ── Contract handling ───────────────────────────────────────────────────────
@@ -328,11 +428,16 @@ export default function NewAnalysisPage() {
     setDocWordCount(null)
     try {
       const text = await extractTextFromFile(file)
+      console.log('[SiteIQ] Contract text length:', text.length)
+      console.log('[SiteIQ] Contract preview:', text.slice(0, 200) || 'EMPTY')
       setDocText(text)
+      setStoreDocText(text)
       const words = text.trim().split(/\s+/).filter(Boolean).length
       setDocWordCount(words.toLocaleString())
-    } catch {
+    } catch (err) {
+      console.error('[SiteIQ] Contract extraction error:', err)
       setDocText('')
+      setStoreDocText('')
     } finally {
       setDocExtracting(false)
     }
@@ -341,6 +446,7 @@ export default function NewAnalysisPage() {
   function removeDoc() {
     setDocFile(null)
     setDocText('')
+    setStoreDocText('')
     setDocWordCount(null)
     setDocExtracting(false)
   }
@@ -349,7 +455,10 @@ export default function NewAnalysisPage() {
 
   function loadScenario(scenario) {
     setSiteDescription(scenario.siteDescription)
-    if (!docText) setDocText(scenario.contractText)
+    if (!docText) {
+      setDocText(scenario.contractText)
+      setStoreDocText(scenario.contractText)
+    }
   }
 
   // ── Step 1 validation ───────────────────────────────────────────────────────
@@ -417,10 +526,10 @@ Regulatory body: ${stateData.regulatory.body}`
       // Step 2 — HF image detection
       setLoadingStep(2)
       let detectedObjects = []
-      if (photoFile) {
+      if (photoFiles.length > 0) {
         try {
-          const dets = await detectObjects(photoFile)
-          detectedObjects = dets.map(d => `${d.label} (${Math.round((d.score ?? 0) * 100)}% confidence)`)
+          const labels = await detectAllPhotos(photoFiles)
+          detectedObjects = labels
         } catch {
           detectedObjects = []
         }
@@ -432,10 +541,13 @@ Regulatory body: ${stateData.regulatory.body}`
       if (docFile && !contractText) {
         try {
           contractText = await extractTextFromFile(docFile)
+          setStoreDocText(contractText)
         } catch {
           contractText = ''
         }
       }
+      console.log('[SiteIQ] Contract text length:', contractText.length)
+      console.log('[SiteIQ] Contract preview:', contractText.slice(0, 200) || 'EMPTY')
 
       // Step 4 — NER
       setLoadingStep(4)
@@ -463,6 +575,7 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
         projectContext,
         weatherContext,
         geoContext,
+        photoFiles.length > 1 ? `MULTIPLE SITE PHOTOS: ${photoFiles.length} photos were uploaded and analysed. Detections represent objects found across all photos of the site.` : '',
         siteDescription ? `SITE CONDITIONS (described by manager):\n${siteDescription}` : '',
       ].filter(Boolean).join('\n\n')
 
@@ -515,7 +628,7 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
   // ── Step 1 & 2 layout ───────────────────────────────────────────────────────
 
   const step1Valid = projectInfo.projectName.trim() && projectInfo.companyName.trim()
-  const step2Valid = photoFile !== null || siteDescription.trim().length > 0
+  const step2Valid = photoFiles.length > 0 || siteDescription.trim().length > 0
 
   return (
     <div className="fade-in" style={{ padding: '24px', maxWidth: '860px', margin: '0 auto' }}>
@@ -698,23 +811,17 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
 
           {/* Upload zones */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: fileError ? '10px' : '20px' }}>
-            <FileUploadZone
-              accept="image/jpeg,image/png,image/webp"
-              icon={<Camera size={20} color="var(--text-accent)" />}
-              title="Upload Site Photo"
-              subtitle="JPG, PNG, WEBP · Max 10MB"
-              file={photoFile}
-              onFile={handlePhotoFile}
-              onRemove={removePhoto}
-            >
-              {photoPreview && (
-                <img
-                  src={photoPreview}
-                  alt="Site preview"
-                  style={{ maxHeight: '80px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                />
-              )}
-            </FileUploadZone>
+
+            {/* Multi-photo upload */}
+            <div>
+              <MultiPhotoUploadZone
+                photoFiles={photoFiles}
+                photoPreviews={photoPreviews}
+                onFiles={handlePhotoFiles}
+                onRemove={removePhoto}
+                maxPhotos={MAX_PHOTOS}
+              />
+            </div>
 
             <FileUploadZone
               accept=".pdf,.txt,.docx"

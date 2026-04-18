@@ -72,6 +72,32 @@ function parseDetections(data) {
 }
 
 /**
+ * Detect objects across multiple site photos — runs in parallel and deduplicates
+ * @param {File[]} imageFiles - array of image files
+ * @returns {string[]} deduplicated array of detected object labels
+ */
+export async function detectAllPhotos(imageFiles) {
+  if (!imageFiles || imageFiles.length === 0) return []
+
+  const results = await Promise.all(
+    imageFiles.map(async (file) => {
+      try {
+        return await detectObjects(file)
+      } catch {
+        return []
+      }
+    })
+  )
+
+  const seen = new Set()
+  return results.flat().filter(label => {
+    if (seen.has(label)) return false
+    seen.add(label)
+    return true
+  })
+}
+
+/**
  * Extract named entities from contract text using BERT NER
  * @param {string} text - contract text
  * @returns {Array} array of entity objects {word, entity_group, score}

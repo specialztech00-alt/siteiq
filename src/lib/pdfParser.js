@@ -22,23 +22,38 @@ async function getPdfjs() {
  * @returns {string} concatenated text content from all pages
  */
 export async function extractTextFromPDF(file) {
-  const pdfjs = await getPdfjs()
+  try {
+    const pdfjs = await getPdfjs()
 
-  const arrayBuffer = await file.arrayBuffer()
-  const loadingTask = pdfjs.getDocument({ data: arrayBuffer })
-  const pdf = await loadingTask.promise
+    const arrayBuffer = await file.arrayBuffer()
+    const loadingTask = pdfjs.getDocument({ data: arrayBuffer })
+    const pdf = await loadingTask.promise
 
-  const pageTexts = []
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map(item => item.str)
-      .join(' ')
-    pageTexts.push(pageText)
+    console.log(`[SiteIQ] PDF loaded: ${pdf.numPages} pages`)
+
+    const pageTexts = []
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum)
+      const textContent = await page.getTextContent()
+      const pageText = textContent.items
+        .map(item => item.str)
+        .join(' ')
+      pageTexts.push(pageText)
+    }
+
+    const fullText = pageTexts.join('\n\n')
+    console.log(`[SiteIQ] PDF extracted: ${fullText.length} characters`)
+    return fullText
+  } catch (error) {
+    console.error('[SiteIQ] PDF extraction failed:', error)
+    try {
+      const text = await file.text()
+      console.log(`[SiteIQ] Fallback text read: ${text.length} characters`)
+      return text
+    } catch {
+      return ''
+    }
   }
-
-  return pageTexts.join('\n\n')
 }
 
 /**

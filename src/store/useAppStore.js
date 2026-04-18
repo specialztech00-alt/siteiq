@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand'
-import { detectObjects, extractEntities } from '../lib/huggingface.js'
+import { detectAllPhotos, extractEntities } from '../lib/huggingface.js'
 import { extractTextFromFile } from '../lib/pdfParser.js'
 import { analyseSite } from '../lib/claude.js'
 import { supabase } from '../lib/supabase.js'
@@ -23,7 +23,7 @@ export const LOADING_STEPS = [
 
 const useAppStore = create((set, get) => ({
   // ── Upload state ──────────────────────────────────────────────────────────
-  photoFile: null,
+  photoFiles: [],
   docFile: null,
   docText: '',
   siteDescription: '',
@@ -58,7 +58,7 @@ const useAppStore = create((set, get) => ({
   selectedState: localStorage.getItem('siteiq-state') || 'Lagos',
 
   // ── Actions ───────────────────────────────────────────────────────────────
-  setPhotoFile: (file) => set({ photoFile: file }),
+  setPhotoFiles: (files) => set({ photoFiles: Array.isArray(files) ? files : [files].filter(Boolean) }),
   setDocFile: (file) => set({ docFile: file }),
   setDocText: (text) => set({ docText: text }),
   setSiteDescription: (text) => set({ siteDescription: text }),
@@ -201,7 +201,7 @@ const useAppStore = create((set, get) => ({
   })),
 
   clearAll: () => set({
-    photoFile: null,
+    photoFiles: [],
     docFile: null,
     docText: '',
     siteDescription: '',
@@ -219,7 +219,7 @@ const useAppStore = create((set, get) => ({
   }),
 
   loadDemoScenario: (scenario) => set({
-    photoFile: null,
+    photoFiles: [],
     docFile: null,
     siteDescription: scenario.siteDescription,
     docText: scenario.contractText,
@@ -239,9 +239,9 @@ const useAppStore = create((set, get) => ({
 
   // ── Main analysis pipeline ────────────────────────────────────────────────
   runAnalysis: async () => {
-    const { photoFile, docFile, docText: existingDocText, siteDescription } = get()
+    const { photoFiles, docFile, docText: existingDocText, siteDescription } = get()
 
-    if (!photoFile && !docFile && !siteDescription && !existingDocText) {
+    if (!photoFiles?.length && !docFile && !siteDescription && !existingDocText) {
       set({ loadingError: 'Please upload a site photo, contract document, or describe the site conditions.' })
       return false
     }
@@ -255,10 +255,10 @@ const useAppStore = create((set, get) => ({
 
     try {
       // ── Step 1: Object detection ──────────────────────────────────────────
-      if (photoFile) {
+      if (photoFiles?.length) {
         set({ loadingStep: 1 })
         try {
-          hfDetections = await detectObjects(photoFile)
+          hfDetections = await detectAllPhotos(photoFiles)
           set({ hfDetections })
         } catch (err) {
           console.warn('Object detection failed — continuing without it:', err.message)
