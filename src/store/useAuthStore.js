@@ -15,6 +15,7 @@ function mapUser(sbUser, profile = {}) {
 }
 
 async function fetchProfile(userId) {
+  if (!supabase) return {}
   const { data } = await supabase
     .from('profiles')
     .select('full_name, company, role')
@@ -42,6 +43,10 @@ const useAuthStore = create(
       authError: null,
 
       initAuth: async () => {
+        if (!supabase) {
+          set({ isLoading: false })
+          return
+        }
         try {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
@@ -67,6 +72,20 @@ const useAuthStore = create(
 
       signIn: async (email, password) => {
         if (!email || !password) throw new Error('Email and password are required.')
+
+        if (!supabase) {
+          await new Promise(r => setTimeout(r, 800))
+          const user = {
+            id: Date.now().toString(),
+            email,
+            name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            company: null,
+            role: null,
+          }
+          set({ user, profile: null, isAuthenticated: true, authError: null })
+          return user
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw new Error(friendlyError(error.message))
         const profile = await fetchProfile(data.user.id)
@@ -77,6 +96,14 @@ const useAuthStore = create(
 
       signUp: async ({ name, email, password, company, role }) => {
         if (!name || !email || !password) throw new Error('Name, email, and password are required.')
+
+        if (!supabase) {
+          await new Promise(r => setTimeout(r, 1000))
+          const user = { id: Date.now().toString(), name, email, company, role }
+          set({ user, profile: { full_name: name, company, role }, isAuthenticated: true, authError: null })
+          return user
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -111,7 +138,7 @@ const useAuthStore = create(
 
       updateProfile: async (updates) => {
         const userId = get().user?.id
-        if (!userId) return
+        if (!userId || !supabase) return
         await supabase.from('profiles').update(updates).eq('id', userId)
         set(state => ({
           profile: { ...state.profile, ...updates },
@@ -125,7 +152,7 @@ const useAuthStore = create(
       },
 
       signOut: async () => {
-        await supabase.auth.signOut()
+        if (supabase) await supabase.auth.signOut()
         set({ user: null, profile: null, isAuthenticated: false })
       },
     }),

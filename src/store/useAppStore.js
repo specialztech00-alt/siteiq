@@ -122,6 +122,7 @@ const useAppStore = create((set, get) => ({
   },
 
   loadAnalysesFromDb: async (userId) => {
+    if (!supabase) return
     try {
       const uid = userId ?? (await supabase.auth.getUser()).data?.user?.id
       if (!uid) return
@@ -152,6 +153,7 @@ const useAppStore = create((set, get) => ({
 
   syncRiskStatus: async (riskUid, status, userId) => {
     set(state => ({ riskStatuses: { ...state.riskStatuses, [riskUid]: status } }))
+    if (!supabase) return
     try {
       await supabase.from('risk_statuses').upsert({
         user_id: userId,
@@ -165,6 +167,7 @@ const useAppStore = create((set, get) => ({
   },
 
   loadRiskStatuses: async (userId) => {
+    if (!supabase) return
     try {
       const { data } = await supabase
         .from('risk_statuses')
