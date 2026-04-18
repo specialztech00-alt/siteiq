@@ -148,6 +148,7 @@ const useAppStore = create((set, get) => ({
       })
     } catch (err) {
       console.warn('[SiteIQ] Failed to load analyses:', err.message)
+      throw err
     }
   },
 

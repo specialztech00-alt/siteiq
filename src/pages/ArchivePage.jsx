@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Trash2, HardHat, TriangleAlert, CheckCircle2, Plus } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 import useAuthStore from '../store/useAuthStore'
+import ErrorMessage from '../components/ErrorMessage'
 import CircularScore from '../components/CircularScore'
 import StarRating from '../components/StarRating'
 import { CardSkeleton } from '../components/SkeletonCard'
@@ -242,10 +243,14 @@ export default function ArchivePage() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
   const [dbLoading, setDbLoading] = useState(false)
+  const [dbError, setDbError] = useState(null)
 
   useEffect(() => {
     setDbLoading(true)
-    loadAnalysesFromDb(user?.id).finally(() => setDbLoading(false))
+    setDbError(null)
+    loadAnalysesFromDb(user?.id)
+      .catch(err => setDbError(err?.message || 'Failed to load analyses from database.'))
+      .finally(() => setDbLoading(false))
   }, [user?.id])
 
   // Unique project count
@@ -373,6 +378,23 @@ export default function ArchivePage() {
           Run Analysis
         </button>
       </div>
+
+      {/* ── DB error ── */}
+      {dbError && (
+        <div style={{ marginBottom: 20 }}>
+          <ErrorMessage
+            error={dbError}
+            onRetry={() => {
+              setDbError(null)
+              setDbLoading(true)
+              loadAnalysesFromDb(user?.id)
+                .catch(err => setDbError(err?.message || 'Failed to load analyses.'))
+                .finally(() => setDbLoading(false))
+            }}
+            onDismiss={() => setDbError(null)}
+          />
+        </div>
+      )}
 
       {/* ── Filter & Search bar — only shown when there are analyses ── */}
       {!totalEmpty && (

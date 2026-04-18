@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ScanLine,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import useAppStore from '../store/useAppStore.js'
 import useAuthStore from '../store/useAuthStore.js'
+import ErrorMessage from '../components/ErrorMessage.jsx'
 import CircularScore from '../components/CircularScore.jsx'
 import StarRating from '../components/StarRating.jsx'
 import { useWeather } from '../components/WeatherWidget.jsx'
@@ -194,10 +195,11 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { selectedState, reportData, analyses, loadAnalysesFromDb, loadRiskStatuses } = useAppStore()
+  const [dataError, setDataError] = useState(null)
 
   useEffect(() => {
     if (user?.id) {
-      loadAnalysesFromDb(user.id)
+      loadAnalysesFromDb(user.id).catch(err => setDataError(err?.message || 'Could not load your analyses.'))
       loadRiskStatuses(user.id)
     }
   }, [user?.id])
@@ -247,6 +249,13 @@ export default function DashboardPage() {
           Run Analysis
         </button>
       </div>
+
+      {/* ── DB error ── */}
+      {dataError && (
+        <div style={{ marginBottom: 16 }}>
+          <ErrorMessage error={dataError} onDismiss={() => setDataError(null)} compact />
+        </div>
+      )}
 
       {/* ── Stats strip ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
