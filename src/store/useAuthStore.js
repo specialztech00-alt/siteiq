@@ -47,15 +47,19 @@ const useAuthStore = create(
           set({ isLoading: false })
           return
         }
+        // Timeout so a dead/slow network never leaves isLoading: true forever
+        const timeout = setTimeout(() => set({ isLoading: false }), 5000)
         try {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session?.user) {
+          const { data, error } = await supabase.auth.getSession()
+          const session = data?.session
+          if (!error && session?.user) {
             const profile = await fetchProfile(session.user.id)
             set({ user: mapUser(session.user, profile), profile, isAuthenticated: true })
           }
         } catch (err) {
           console.warn('[SiteIQ] initAuth error:', err.message)
         } finally {
+          clearTimeout(timeout)
           set({ isLoading: false })
         }
 
