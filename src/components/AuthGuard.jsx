@@ -2,11 +2,9 @@ import { Navigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../store/useAuthStore.js'
 
 export default function AuthGuard({ children }) {
-  const { isAuthenticated, isLoading, authError } = useAuthStore(s => ({
-    isAuthenticated: s.isAuthenticated,
-    isLoading: s.isLoading,
-    authError: s.authError,
-  }))
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const isLoading       = useAuthStore(s => s.isLoading)
+  const authError       = useAuthStore(s => s.authError)
   const location = useLocation()
 
   if (isLoading) {

@@ -65,6 +65,8 @@ const useAuthStore = create(
 
         supabase.auth.onAuthStateChange(async (event, session) => {
           if (event === 'SIGNED_IN' && session?.user) {
+            const current = get()
+            if (current.isAuthenticated && current.user?.id === session.user.id) return
             const profile = await fetchProfile(session.user.id)
             set({ user: mapUser(session.user, profile), profile, isAuthenticated: true })
           }
