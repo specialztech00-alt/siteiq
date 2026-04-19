@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, HardHat, ScrollText, ClipboardList, MessageSquare, Share2, Printer, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
-import { callClaude } from '../lib/claude.js'
+import { askClaude } from '../lib/claude.js'
+import ClaudeCard from '../components/ClaudeCard.jsx'
+import TopPriorityBanner from '../components/TopPriorityBanner.jsx'
 import ScoreStrip from '../components/ScoreStrip.jsx'
 import RiskCard from '../components/RiskCard.jsx'
 import ObligationTable from '../components/ObligationTable.jsx'
@@ -124,88 +126,74 @@ function SectionHeading({ children, sub }) {
 
 // ── AI Reasoning Panel ─────────────────────────────────────────────────────────
 
-function AIReasoningPanel({ report }) {
+function AIReasoningPanel({ report, projectInfo }) {
   const [open, setOpen] = useState(false)
   const [reasoning, setReasoning] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [reasonLoading, setReasonLoading] = useState(false)
   const loadedRef = useRef(false)
 
   function handleToggle() {
     const next = !open
     setOpen(next)
     if (!next || loadedRef.current) return
-
     loadedRef.current = true
-    setLoading(true)
+    setReasonLoading(true)
 
-    const topRisks = (report.risks ?? []).filter(r => r.severity === 'High').slice(0, 3).map(r => r.title).join(', ') || 'none'
-    const topObligs = (report.obligations ?? []).slice(0, 3).map(o => o.clause || o.title || 'clause').join(', ') || 'none'
-
-    const prompt = `A construction site analysis returned the following scores:
-- Safety Score: ${report.safetyScore}/100
-- Contract Health Score: ${report.contractScore}/100
-- Risk breakdown: ${report.riskCount?.high ?? 0} high, ${report.riskCount?.medium ?? 0} medium, ${report.riskCount?.low ?? 0} low risks
-- Top high risks: ${topRisks}
-- Key contract obligations: ${topObligs}
-- Executive summary: ${report.summary ?? 'Not provided'}
-
-Explain in plain English, as if speaking to a site manager:
-1. Why the safety score is ${report.safetyScore} — what drove it up or down
-2. Why the contract score is ${report.contractScore} — key factors
-3. What the most important thing to act on this week is
-
-Be direct, practical, and non-technical. 2-3 sentences per point. No bullet lists, just flowing paragraphs.`
-
-    callClaude({
-      systemPrompt: 'You explain AI-generated construction site analysis scores to non-technical Nigerian site managers.',
-      messages: [{ role: 'user', content: prompt }],
-      maxTokens: 500,
-    }).then(text => {
+    askClaude(
+      `You are SiteIQ explaining your analysis scoring to a site manager in plain English.\n\nProject: ${projectInfo?.projectName || report.reportTitle}\nSafety score: ${report.safetyScore}/100\nContract score: ${report.contractScore}/100\nHigh risks found: ${report.riskCount?.high || 0}\nTop safety risk: ${report.risks?.[0]?.title || 'None'}\nTop contract issue: ${report.penaltyClauses?.[0]?.title || 'None'}\n\nExplain in plain English:\n1. Why the safety score is ${report.safetyScore} (1 sentence mentioning the top risk)\n2. Why the contract score is ${report.contractScore} (1 sentence mentioning the key issue)\n3. The single most important action today (1 sentence)\n\nUse simple language. No jargon. No bullet points. Just 3 clear sentences.`,
+      'You explain AI-generated construction site analysis scores to non-technical Nigerian site managers.',
+      500
+    ).then(text => {
       setReasoning(text)
-      setLoading(false)
-    }).catch(err => {
-      setError(err.message)
-      setLoading(false)
+      setReasonLoading(false)
     })
   }
 
   return (
-    <div className="card" style={{ overflow: 'hidden' }}>
+    <div style={{
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      overflow: 'hidden',
+    }}>
       <button
         onClick={handleToggle}
         style={{
-          width: '100%', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+          width: '100%', padding: '14px 16px', background: 'none', border: 'none',
+          cursor: 'pointer', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: '12px',
         }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'none'}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Sparkles size={15} style={{ color: 'var(--accent)' }} />
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
             Why these scores?
           </span>
-          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Claude AI Reasoning</span>
+          <span style={{
+            fontSize: '10px', fontWeight: 700, padding: '2px 8px',
+            borderRadius: '20px', background: 'var(--accent-dim)', color: 'var(--text-accent)',
+          }}>
+            Claude explains
+          </span>
         </div>
-        {open ? <ChevronUp size={15} style={{ color: 'var(--text-tertiary)' }} /> : <ChevronDown size={15} style={{ color: 'var(--text-tertiary)' }} />}
+        {open
+          ? <ChevronUp size={15} style={{ color: 'var(--text-tertiary)', transition: 'transform 0.2s' }} />
+          : <ChevronDown size={15} style={{ color: 'var(--text-tertiary)', transition: 'transform 0.2s' }} />
+        }
       </button>
 
       {open && (
         <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
-          {loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '14px' }}>
-              {[90, 75, 85, 60, 80].map((w, i) => (
-                <div key={i} style={{ height: '13px', width: `${w}%`, borderRadius: '4px', background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-              ))}
-            </div>
-          )}
-          {error && (
-            <p style={{ fontSize: '13px', color: 'var(--danger)', paddingTop: '14px' }}>Could not load reasoning — {error}</p>
-          )}
-          {reasoning && !loading && (
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.75, paddingTop: '14px', whiteSpace: 'pre-wrap' }}>
-              {reasoning}
-            </div>
-          )}
+          <div style={{ paddingTop: '14px' }}>
+            <ClaudeCard
+              title="Score explanation"
+              subtitle="Plain English for site managers"
+              content={reasoning}
+              loading={reasonLoading}
+            />
+          </div>
         </div>
       )}
     </div>
@@ -214,7 +202,7 @@ Be direct, practical, and non-technical. 2-3 sentences per point. No bullet list
 
 // ── Overview tab ───────────────────────────────────────────────────────────────
 
-function OverviewTab({ report }) {
+function OverviewTab({ report, projectInfo }) {
   const { summary, risks, pmActions, safeObservations } = report
   const topRisks   = (risks ?? []).filter(r => r.severity === 'High').slice(0, 3)
   const topActions = (pmActions ?? []).slice(0, 3)
@@ -223,7 +211,7 @@ function OverviewTab({ report }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <ScoreStrip report={report} />
       <ProgressSummaryCard report={report} />
-      <AIReasoningPanel report={report} />
+      <AIReasoningPanel report={report} projectInfo={projectInfo} />
 
       {summary && (
         <div className="card" style={{ borderLeft: '3px solid var(--accent)', padding: '16px' }}>
@@ -497,6 +485,10 @@ export default function ReportPage() {
   const analysisId      = useAppStore(s => s.analysisId)
   const [showToast, setShowToast] = useState(false)
   const [generatedAt]   = useState(() => new Date())
+  const topAction = reportData?.pmActions?.[0]
+  const [topActionDismissed, setTopActionDismissed] = useState(
+    () => !!localStorage.getItem('dismissed-report-' + (reportData?.pmActions?.[0]?.action || ''))
+  )
 
   useEffect(() => {
     if (!reportData) navigate('/')
@@ -652,7 +644,18 @@ export default function ReportPage() {
 
       {/* Content */}
       <main style={{ flex: 1, padding: '24px', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
-        {activeTab === 0 && <OverviewTab report={reportData} />}
+        {topAction && (
+          <TopPriorityBanner
+            action={topAction.action}
+            deadline={topAction.deadline}
+            dismissed={topActionDismissed}
+            onDismiss={() => {
+              localStorage.setItem('dismissed-report-' + topAction.action, 'true')
+              setTopActionDismissed(true)
+            }}
+          />
+        )}
+        {activeTab === 0 && <OverviewTab report={reportData} projectInfo={projectInfo} />}
         {activeTab === 1 && <SafetyTab report={reportData} />}
         {activeTab === 2 && <ContractTab report={reportData} />}
         {activeTab === 3 && <ActionEngine pmActions={reportData.pmActions} penaltyClauses={reportData.penaltyClauses} notices={reportData.notices} />}

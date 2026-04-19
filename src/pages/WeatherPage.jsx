@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Wind, Droplets, CloudRain, Thermometer, Flag, CheckCircle2, AlertTriangle, XCircle, Sparkles } from 'lucide-react'
 import useAppStore from '../store/useAppStore'
 import { useWeather } from '../components/WeatherWidget'
 import { getStateByName, getStateNames } from '../data/nigeriaStates'
-import { callClaude } from '../lib/claude.js'
+import { askClaude } from '../lib/claude.js'
+import ClaudeCard from '../components/ClaudeCard.jsx'
 import {
   getCurrentWeather,
   getWeatherIcon,
@@ -366,87 +367,48 @@ function OperationsImpact({ forecast, loading }) {
 
 // ── Claude AI Advisory ────────────────────────────────────────────────────────
 
-function ClaudeWeatherAdvisory({ weather, forecast, stateName }) {
-  const [advice, setAdvice] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+function ClaudeWeatherAdvisory({ weather, forecast, stateName, analyses }) {
+  const [advisory, setAdvisory] = useState(null)
+  const [advLoading, setAdvLoading] = useState(false)
+  const prevStateRef = useRef(null)
 
   useEffect(() => {
     if (!weather || !forecast) return
+    if (advisory && prevStateRef.current === stateName) return
+    prevStateRef.current = stateName
     let cancelled = false
-    setLoading(true)
-    setAdvice(null)
-    setError(null)
+    setAdvLoading(true)
+    setAdvisory(null)
 
-    const forecastSummary = forecast.time.slice(0, 7).map((date, i) => (
-      `${date}: max ${Math.round(forecast.temperature_2m_max[i])}°C, rain ${forecast.precipitation_sum[i]}mm, wind ${Math.round(forecast.windspeed_10m_max[i])}km/h`
-    )).join('\n')
+    const forecastRows = (forecast.time || []).slice(0, 7).map((date, i) =>
+      `${date}: Max ${Math.round(forecast.temperature_2m_max[i])}°C, Rain ${forecast.precipitation_sum[i]}mm, Wind ${Math.round(forecast.windspeed_10m_max[i])}km/h`
+    ).join('\n')
 
-    const prompt = `You are a construction safety expert for Nigerian building sites.
-
-Current conditions in ${stateName}:
-- Temperature: ${Math.round(weather.temperature_2m)}°C (feels like ${Math.round(weather.apparent_temperature)}°C)
-- Wind: ${Math.round(weather.windspeed_10m)} km/h
-- Precipitation: ${weather.precipitation} mm
-- Humidity: ${weather.relative_humidity_2m}%
-- UV Index: ${weather.uv_index ?? 'N/A'}
-- Weather: ${getWeatherDescription(weather.weathercode)}
-
-7-day forecast:
-${forecastSummary}
-
-Provide 3-5 specific, actionable construction safety advisories for this week. Focus on:
-- Which days are safest for structural work, concrete pours, crane operations
-- Heat stress risks and worker welfare measures
-- Rain/wind impacts on scaffold, earthworks, hoisting
-- Any specific precautions for ${stateName} conditions
-
-Be direct and practical. Use plain text, no markdown headers. 2-3 sentences per advisory. Label each advisory with a short bold title.`
-
-    callClaude({
-      systemPrompt: 'You are a Nigerian construction site safety advisor. Be specific, practical, and concise.',
-      messages: [{ role: 'user', content: prompt }],
-      maxTokens: 600,
-    }).then(text => {
-      if (!cancelled) { setAdvice(text); setLoading(false) }
-    }).catch(err => {
-      if (!cancelled) { setError(err.message); setLoading(false) }
+    askClaude(
+      `You are a Nigerian construction safety expert.\n\nCurrent weather in ${stateName}:\nTemperature: ${Math.round(weather.temperature_2m)}°C\nWind: ${Math.round(weather.windspeed_10m)} km/h\nRain today: ${weather.precipitation}mm\nCondition: ${getWeatherDescription(weather.weathercode)}\n\n7-day outlook:\n${forecastRows}\n\nMost recent construction phase: ${analyses?.[0]?.constructionPhase || 'general construction'}\n\nGive me 4 specific pieces of advice for site managers in ${stateName} this week:\n1. Best day for concrete pours (name the day)\n2. Any day to suspend outdoor operations (name it or say none)\n3. Heat stress risk level (Low/Medium/High) with one specific action\n4. One Nigerian-specific weather risk for this season\n\nBe direct. Under 120 words total.`,
+      'You are a Nigerian construction site safety advisor. Be specific, practical, and concise.',
+      400
+    ).then(text => {
+      if (!cancelled) { setAdvisory(text); setAdvLoading(false) }
     })
 
     return () => { cancelled = true }
-  }, [weather?.weathercode, weather?.temperature_2m, stateName])
+  }, [weather?.weathercode, stateName])
 
-  if (!weather && !loading) return null
+  if (!weather && !advLoading) return null
 
   return (
-    <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-        <Sparkles size={16} style={{ color: 'var(--accent)' }} />
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Claude AI Advisory
-        </h3>
-        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
-          Based on current conditions
-        </span>
-      </div>
-
-      {loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {[90, 75, 85, 70].map((w, i) => (
-            <div key={i} style={{ height: '13px', width: `${w}%`, borderRadius: '4px', background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <p style={{ fontSize: '13px', color: 'var(--danger)' }}>Could not load advisory — {error}</p>
-      )}
-
-      {advice && !loading && (
-        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-          {advice}
-        </div>
-      )}
+    <div style={{ marginBottom: '20px' }}>
+      <ClaudeCard
+        title="Construction weather advisory"
+        subtitle={`Claude AI · ${stateName}`}
+        content={advisory}
+        loading={advLoading}
+        onRefresh={() => {
+          prevStateRef.current = null
+          setAdvisory(null)
+        }}
+      />
     </div>
   )
 }
@@ -532,7 +494,7 @@ function StateComparison() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function WeatherPage() {
-  const { selectedState, setSelectedState } = useAppStore()
+  const { selectedState, setSelectedState, analyses } = useAppStore()
   const { weather, forecast, loading, error } = useWeather(selectedState)
   const stateNames = getStateNames()
 
@@ -577,7 +539,7 @@ export default function WeatherPage() {
       <OperationsImpact forecast={forecast} loading={loading} />
 
       {/* Claude AI Advisory */}
-      <ClaudeWeatherAdvisory weather={weather} forecast={forecast} stateName={selectedState} />
+      <ClaudeWeatherAdvisory weather={weather} forecast={forecast} stateName={selectedState} analyses={analyses} />
 
       {/* State comparison */}
       <StateComparison />

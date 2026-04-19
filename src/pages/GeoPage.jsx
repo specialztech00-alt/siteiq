@@ -2,8 +2,8 @@ import { useRef, useState, useEffect } from 'react'
 import useAppStore from '../store/useAppStore'
 import { getStateByName, getStateNames, nigeriaStates } from '../data/nigeriaStates'
 import { getConstructionScore } from '../lib/geoData'
-import { callClaude } from '../lib/claude.js'
-import { Sparkles } from 'lucide-react'
+import { askClaude } from '../lib/claude.js'
+import ClaudeCard from '../components/ClaudeCard.jsx'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -492,89 +492,38 @@ function RegulatoryInfo({ state }) {
   )
 }
 
-// ── Claude Ground Intelligence ────────────────────────────────────────────────
+// ── Claude Ground Intelligence ───────────────────────��────────────────────────
 
-function ClaudeGeoIntelligence({ state }) {
-  const [intel, setIntel] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+function ClaudeGeoIntelligence({ selectedState, stateData }) {
+  const [cache, setCache] = useState({})
 
   useEffect(() => {
-    if (!state) return
+    if (!stateData || cache[selectedState]) return
     let cancelled = false
-    setLoading(true)
-    setIntel(null)
-    setError(null)
 
-    const { score, label } = getConstructionScore(state.name)
-    const prompt = `You are a geotechnical and construction expert specialising in Nigerian construction.
-
-State: ${state.name} (${state.zone})
-Soil type: ${state.soil.type}
-Soil description: ${state.soil.description}
-Bearing capacity: ${state.soil.bearingCapacity}
-Water table: ${state.soil.waterTable}
-Foundation recommendation: ${state.soil.foundationRec}
-Special considerations: ${state.soil.specialConsiderations || 'None noted'}
-Flood risk: ${state.risks.flood}
-Erosion risk: ${state.risks.erosion}
-Landslide risk: ${state.risks.landslide}
-Extreme heat: ${state.risks.extremeHeat}
-Harmattan dust: ${state.risks.harmattan}
-Rainy season: ${state.rainy.start} – ${state.rainy.end} (peak: ${state.rainy.peakMonths})
-Construction difficulty score: ${score}/10 (${label})
-Regulatory body: ${state.regulatory.body}
-
-Provide 3-4 targeted geotechnical advisories for construction in ${state.name}. Cover:
-- Foundation design priorities given this soil profile
-- Key timing windows in the construction calendar
-- Risk mitigation for the highest-rated hazards
-- Any special regulatory or procurement considerations
-
-Be direct. Use plain text, no markdown headers. 2-3 sentences per advisory. Label each with a short bold title.`
-
-    callClaude({
-      systemPrompt: 'You are a Nigerian construction geotechnical advisor. Be specific and practical.',
-      messages: [{ role: 'user', content: prompt }],
-      maxTokens: 600,
-    }).then(text => {
-      if (!cancelled) { setIntel(text); setLoading(false) }
-    }).catch(err => {
-      if (!cancelled) { setError(err.message); setLoading(false) }
+    const { score, label } = getConstructionScore(stateData.name)
+    askClaude(
+      `You are a Nigerian geotechnical and construction expert.\n\nGround conditions for ${selectedState}:\nSoil: ${stateData.soil.type}\nDescription: ${stateData.soil.description}\nBearing capacity: ${stateData.soil.bearingCapacity}\nWater table: ${stateData.soil.waterTable}\nFoundation recommendation: ${stateData.soil.foundationRec}\nSpecial considerations: ${stateData.soil.specialConsiderations || 'None'}\nFlood risk: ${stateData.risks.flood}\nErosion risk: ${stateData.risks.erosion}\nRegulatory body: ${stateData.regulatory.body}\nDifficulty score: ${score}/10 (${label})\n\nFor a contractor starting a new building project in ${selectedState} give me:\n1. The most critical ground condition risk in one sentence\n2. Foundation type with one-line reason\n3. One regulation to comply with before breaking ground\n4. Cost impact vs national average: Low / Medium / High — and why\n\nUnder 100 words. Be specific to ${selectedState}.`,
+      'You are a Nigerian construction geotechnical advisor. Be specific and practical.',
+      400
+    ).then(text => {
+      if (!cancelled && text) setCache(prev => ({ ...prev, [selectedState]: text }))
     })
 
     return () => { cancelled = true }
-  }, [state?.name])
+  }, [selectedState])
+
+  const content = cache[selectedState] || null
+  const loading = !content
 
   return (
-    <div className="card" style={{ padding: '20px', marginBottom: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-        <Sparkles size={16} style={{ color: 'var(--accent)' }} />
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Claude Ground Intelligence
-        </h3>
-        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
-          AI analysis for {state.name}
-        </span>
-      </div>
-
-      {loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {[88, 72, 90, 65].map((w, i) => (
-            <div key={i} style={{ height: '13px', width: `${w}%`, borderRadius: '4px', background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <p style={{ fontSize: '13px', color: 'var(--danger)' }}>Could not load intelligence — {error}</p>
-      )}
-
-      {intel && !loading && (
-        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-          {intel}
-        </div>
-      )}
+    <div style={{ marginBottom: '16px' }}>
+      <ClaudeCard
+        title={`Ground intelligence — ${selectedState}`}
+        subtitle="Claude AI geotechnical analysis"
+        content={content}
+        loading={loading}
+      />
     </div>
   )
 }
@@ -710,7 +659,7 @@ export default function GeoPage() {
       <RegulatoryInfo state={state} />
 
       {/* Claude Ground Intelligence */}
-      <ClaudeGeoIntelligence state={state} />
+      <ClaudeGeoIntelligence selectedState={selectedState} stateData={state} />
 
       {/* All states grid */}
       <AllStatesGrid selectedState={selectedState} onSelectState={setSelectedState} />

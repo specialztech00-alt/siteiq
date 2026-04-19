@@ -496,7 +496,15 @@ export default function AssistantPage() {
     try {
       const history = conv.messages.map(m => ({ role: m.role, content: m.content }))
       const appContext = buildAppContext(useAppStore.getState())
-      const systemPromptOverride = buildChatSystemPrompt(appContext)
+      const systemPromptOverride = `You are SiteIQ Construction Assistant — a specialist AI for Nigerian construction professionals.
+
+${appContext}
+
+You have full access to the user's analysis data above. When asked about risks, reference them by name. When asked about contract clauses, quote actual clause numbers. When asked about regional risks, use the Nigerian geo data.
+
+Always be specific. Never give generic answers when project data exists.
+Keep responses under 200 words.
+Format: [Reg: X] for regulations, [Clause X.X] for contract refs.`
       const raw = await chatWithAssistant({ messages: history, selectedState, recentProjectTitle, systemPromptOverride })
       const followUps = parseFollowUps(raw)
       const content = cleanResponseText(raw)

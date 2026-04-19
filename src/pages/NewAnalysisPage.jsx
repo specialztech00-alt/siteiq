@@ -16,7 +16,8 @@ import {
 import { DEMO_SCENARIOS, FALLBACK_DEMO_REPORT } from '../lib/prompts.js'
 import { detectAllPhotos, extractEntities } from '../lib/huggingface.js'
 import { extractTextFromFile } from '../lib/pdfParser.js'
-import { analyseSite } from '../lib/claude.js'
+import { analyseSite, askClaude } from '../lib/claude.js'
+import ClaudeCard from '../components/ClaudeCard.jsx'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -377,6 +378,8 @@ export default function NewAnalysisPage() {
   const [docText, setDocText] = useState('')
   const [docExtracting, setDocExtracting] = useState(false)
   const [docWordCount, setDocWordCount] = useState(null)
+  const [contractPreview, setContractPreview] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
   const [siteDescription, setSiteDescription] = useState('')
   const [loadingStep, setLoadingStep] = useState(0)
   const [errors, setErrors] = useState({})
@@ -434,6 +437,17 @@ export default function NewAnalysisPage() {
       setStoreDocText(text)
       const words = text.trim().split(/\s+/).filter(Boolean).length
       setDocWordCount(words.toLocaleString())
+      if (text.length > 100) {
+        setPreviewLoading(true)
+        setContractPreview(null)
+        askClaude(
+          `You are a construction contract specialist. Read this contract opening and give me a 3-line quick read:\n\nLine 1: Contract type and parties (format: "[Type]: [Party A] vs [Party B]")\nLine 2: Contract sum and LD rate if found (format: "Value: [X] · LD: [X]/day")\nLine 3: One red flag you notice immediately (format: "Flag: [issue]")\n\nContract text:\n${text.slice(0, 2000)}\n\nReply with exactly 3 lines, no other text.`,
+          '', 200
+        ).then(result => {
+          setContractPreview(result)
+          setPreviewLoading(false)
+        })
+      }
     } catch (err) {
       console.error('[SiteIQ] Contract extraction error:', err)
       setDocText('')
@@ -449,6 +463,8 @@ export default function NewAnalysisPage() {
     setStoreDocText('')
     setDocWordCount(null)
     setDocExtracting(false)
+    setContractPreview(null)
+    setPreviewLoading(false)
   }
 
   // ── Demo scenarios ──────────────────────────────────────────────────────────
@@ -835,6 +851,19 @@ Workers on site: ${projectInfo.workerCount || 'Not specified'}`
               extracted={docWordCount ? `Text extracted (${docWordCount} words)` : null}
             />
           </div>
+
+          {/* Contract quick-read */}
+          {(contractPreview || previewLoading) && (
+            <div style={{ marginBottom: '20px' }}>
+              <ClaudeCard
+                title="Contract quick-read"
+                subtitle="Claude AI — instant preview"
+                content={contractPreview}
+                loading={previewLoading}
+                variant="advisory"
+              />
+            </div>
+          )}
 
           {/* File validation error */}
           {fileError && (

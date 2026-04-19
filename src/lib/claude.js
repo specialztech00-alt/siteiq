@@ -136,6 +136,26 @@ export async function analyseSite({ siteDescription, detectedObjects, contractTe
 }
 
 /**
+ * Convenience wrapper — quick single-turn Claude call, returns text or null
+ * Used by feature cards across the app (weather, geo, dashboard, etc.)
+ */
+export async function askClaude(prompt, systemContext = '', maxTokens = 500) {
+  const key = import.meta.env.VITE_ANTHROPIC_API_KEY
+  if (!key || key === 'your_anthropic_api_key_here') return null
+  try {
+    return await callClaude({
+      systemPrompt: systemContext ||
+        'You are SiteIQ — an expert Nigerian construction safety and contract intelligence AI. Be specific, practical, and always reference Nigerian context where relevant. Keep responses concise.',
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens,
+    })
+  } catch (e) {
+    console.error('askClaude error:', e.message)
+    return null
+  }
+}
+
+/**
  * Contract Q&A chat — scoped to the uploaded contract
  * @param {Array}  chatHistory  - array of {role, content} messages
  * @param {string} contractText - the contract text for context

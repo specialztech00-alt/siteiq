@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import useAppStore from '../store/useAppStore'
 import { chatWithAssistant, parseFollowUps, cleanResponseText } from '../lib/assistantApi'
 import { buildAppContext } from '../lib/contextBuilder'
@@ -49,26 +49,48 @@ function SendArrowIcon() {
   )
 }
 
-// ── Quick questions ───────────────────────────────────────────────────────────
+// ── Quick questions (page-aware) ──────────────────────────────────────────────
 
-const QUICK_QUESTIONS_WITH_REPORT = [
-  'Explain the highest risk in detail',
-  'What are my most urgent PM actions?',
-  'What should I do about the contract penalty clause?',
-  'Is it safe to work today in my selected state?',
-]
-
-const QUICK_QUESTIONS_NO_REPORT = [
-  'What are common risks in Lagos excavation?',
-  'Explain liquidated damages simply',
-  'What PPE is needed for roofing works?',
-  'What are the ground conditions in Abuja?',
-]
+function usePageQuestions(pathname, selectedState) {
+  return useMemo(() => {
+    if (pathname.includes('weather')) return [
+      'Is today safe for concrete pours?',
+      'Should I suspend any operations today?',
+      'What\'s the heat stress risk this week?',
+    ]
+    if (pathname.includes('geo')) return [
+      `What foundation suits ${selectedState}?`,
+      'What are the soil risks here?',
+      'Which regulations apply in this state?',
+    ]
+    if (pathname.includes('report')) return [
+      'Explain the highest risk in detail',
+      'What\'s my most urgent contract action?',
+      'Summarise this report in 2 sentences',
+    ]
+    if (pathname.includes('risks')) return [
+      'Which risk should I fix first?',
+      'What\'s the pattern across my projects?',
+      'How do I close these risks?',
+    ]
+    if (pathname.includes('archive')) return [
+      'Which project needs attention most?',
+      'Compare my two latest projects',
+      'What\'s my average safety score?',
+    ]
+    return [
+      'What are common Lagos excavation risks?',
+      'Explain extension of time simply',
+      'What PPE is required for roofing?',
+    ]
+  }, [pathname, selectedState])
+}
 
 // ── Floating chat component ───────────────────────────────────────────────────
 
 export default function FloatingChat() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const store = useAppStore()
   const { selectedState, analyses, reportData } = store
 
@@ -82,6 +104,7 @@ export default function FloatingChat() {
   const bottomRef = useRef(null)
 
   const recentProjectTitle = analyses[0]?.projectName ?? null
+  const quickQuestions = usePageQuestions(pathname, selectedState)
 
   // Close on outside click
   useEffect(() => {
@@ -122,7 +145,15 @@ export default function FloatingChat() {
     try {
       const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
       const appContext = buildAppContext(useAppStore.getState())
-      const systemPromptOverride = buildChatSystemPrompt(appContext)
+      const systemPromptOverride = `You are SiteIQ Construction Assistant — a specialist AI for Nigerian construction professionals.
+
+${appContext}
+
+You have full access to the user's analysis data above. When asked about risks, reference them by name. When asked about contract clauses, quote actual clause numbers. When asked about regional risks, use the Nigerian geo data.
+
+Always be specific. Never give generic answers when project data exists.
+Keep responses under 200 words.
+Format: [Reg: X] for regulations, [Clause X.X] for contract refs.`
       const raw = await chatWithAssistant({ messages: history, selectedState, recentProjectTitle, systemPromptOverride })
       const followUps = parseFollowUps(raw)
       const responseContent = cleanResponseText(raw)
@@ -228,7 +259,7 @@ export default function FloatingChat() {
                   Quick questions
                 </p>
                 <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                  {(reportData ? QUICK_QUESTIONS_WITH_REPORT : QUICK_QUESTIONS_NO_REPORT).map(q => (
+                  {quickQuestions.map(q => (
                     <button key={q} onClick={() => sendMessage(q)} style={{
                       fontSize: '12px', padding: '6px 10px', borderRadius: '20px',
                       background: 'var(--bg-secondary)', border: '1px solid var(--border)',
