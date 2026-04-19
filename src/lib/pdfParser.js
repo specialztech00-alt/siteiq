@@ -2,65 +2,117 @@
  * SiteIQ — PDF text extraction using PDF.js
  */
 
-let pdfjsLib = null
-
-async function getPdfjs() {
-  if (pdfjsLib) return pdfjsLib
-
-  // Dynamic import to avoid build-time issues with the worker
-  pdfjsLib = await import('pdfjs-dist')
-
-  // Use CDN-hosted worker to avoid Vite/worker bundling complexity
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-
-  return pdfjsLib
-}
-
-/**
- * Extract all text from a PDF file
- * @param {File} file - the uploaded PDF File object
- * @returns {string} concatenated text content from all pages
- */
 export async function extractTextFromPDF(file) {
-  try {
-    const pdfjs = await getPdfjs()
+  if (!file) {
+    console.log('pdfParser: no file provided')
+    return ''
+  }
 
-    const arrayBuffer = await file.arrayBuffer()
-    const loadingTask = pdfjs.getDocument({ data: arrayBuffer })
-    const pdf = await loadingTask.promise
+  console.log('pdfParser: processing file', {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+  })
 
-    console.log(`[SiteIQ] PDF loaded: ${pdf.numPages} pages`)
-
-    const pageTexts = []
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum)
-      const textContent = await page.getTextContent()
-      const pageText = textContent.items
-        .map(item => item.str)
-        .join(' ')
-      pageTexts.push(pageText)
-    }
-
-    const fullText = pageTexts.join('\n\n')
-    console.log(`[SiteIQ] PDF extracted: ${fullText.length} characters`)
-    return fullText
-  } catch (error) {
-    console.error('[SiteIQ] PDF extraction failed:', error)
+  // Handle plain text files
+  if (file.type === 'text/plain' || file.name?.toLowerCase().endsWith('.txt')) {
     try {
       const text = await file.text()
-      console.log(`[SiteIQ] Fallback text read: ${text.length} characters`)
+      console.log('pdfParser: text file, chars:', text.length)
       return text
-    } catch {
+    } catch (e) {
+      console.error('pdfParser: text read failed', e)
       return ''
     }
   }
+
+  // Handle PDF files
+  try {
+    const pdfjsLib = await import('pdfjs-dist/build/pdf')
+
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      try {
+        const workerSrc = new URL(
+          'pdfjs-dist/build/pdf.worker.js',
+          import.meta.url
+        ).toString()
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc
+      } catch (e) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      }
+    }
+
+    const arrayBuffer = await file.arrayBuffer()
+    console.log('pdfParser: arrayBuffer size:', arrayBuffer.byteLength)
+
+    const pdf = await pdfjsLib.getDocument({
+      data: new Uint8Array(arrayBuffer),
+      verbosity: 0,
+      disableFontFace: true,
+      useSystemFonts: false,
+    }).promise
+
+    console.log('pdfParser: PDF loaded,', pdf.numPages, 'pages')
+
+    let fullText = ''
+    const maxPages = Math.min(pdf.numPages, 30)
+
+    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+      try {
+        const page = await pdf.getPage(pageNum)
+        const textContent = await page.getTextContent({
+          normalizeWhitespace: true,
+          disableCombineTextItems: false,
+        })
+
+        const pageText = textContent.items
+          .map(item => {
+            if (item.str) return item.str
+            if (item.hasEOL) return '\n'
+            return ''
+          })
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+
+        if (pageText) {
+          fullText += pageText + '\n\n'
+        }
+
+        console.log(`pdfParser: page ${pageNum} extracted ${pageText.length} chars`)
+      } catch (pageError) {
+        console.warn(`pdfParser: page ${pageNum} failed:`, pageError)
+      }
+    }
+
+    const finalText = fullText.trim()
+    console.log('pdfParser: TOTAL extracted', finalText.length, 'characters')
+    console.log('pdfParser: preview:', finalText.slice(0, 300))
+
+    if (finalText.length < 100) {
+      console.warn('pdfParser: very little text extracted. PDF may be image-based or scanned.')
+      return finalText + '\n[Note: Limited text extracted. PDF may be a scanned document.]'
+    }
+
+    return finalText
+  } catch (error) {
+    console.error('pdfParser: PDF extraction failed:', error)
+
+    try {
+      const text = await file.text()
+      if (text.length > 100) {
+        console.log('pdfParser: fallback text read:', text.length, 'chars')
+        return text
+      }
+    } catch (e) {
+      console.error('pdfParser: fallback also failed:', e)
+    }
+
+    return ''
+  }
 }
 
-/**
- * Extract text from a plain .txt file
- * @param {File} file
- * @returns {string}
- */
 export async function extractTextFromTxt(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -70,11 +122,6 @@ export async function extractTextFromTxt(file) {
   })
 }
 
-/**
- * Smart text extractor — handles PDF, TXT, and DOCX (text only for DOCX)
- * @param {File} file
- * @returns {string}
- */
 export async function extractTextFromFile(file) {
   const ext = file.name.split('.').pop().toLowerCase()
 
@@ -86,8 +133,6 @@ export async function extractTextFromFile(file) {
     return extractTextFromTxt(file)
   }
 
-  // For .docx, attempt to read as text (works for simple Office Open XML)
-  // Full DOCX parsing would require mammoth.js — text fallback is sufficient for hackathon
   try {
     const text = await extractTextFromTxt(file)
     if (text.length > 100) return text

@@ -299,12 +299,14 @@ const useAppStore = create((set, get) => ({
       await tick(300)
 
       set({ loadingStep: 6 })
+      const { projectInfo, selectedState } = get()
       const reportData = await analyseSite({
         siteDescription,
         detectedObjects: hfDetections,
         contractText: docText,
         nerEntities,
         photoFiles,
+        projectInfo: { ...projectInfo, selectedState },
       })
 
       // ── Step 5: Assemble ──────────────────────────────────────────────────

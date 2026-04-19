@@ -2,225 +2,114 @@
  * SiteIQ — All system prompts and prompt builders
  */
 
-export function buildAnalysisPrompt({ siteDescription, detectedObjects, contractText, nerEntities }) {
-  const systemPrompt = `You are SiteIQ — an AI construction intelligence system combining the expertise of a NEBOSH-qualified safety officer, a Nigerian construction project manager, and a construction law specialist.
+export function buildAnalysisPrompt() {
+  return `You are a construction site safety and contract intelligence AI.
 
-CRITICAL — CONTRACT ANALYSIS INSTRUCTIONS:
-When contract text is provided in the user message you MUST:
-1. Read it carefully and extract real party names (Contractor, Employer/Client)
-2. Reference ONLY clause numbers that actually exist in the provided text
-3. Quote specific financial amounts mentioned in the contract (LAD rates, contract sum, retention %)
-4. Identify the actual contract type (JCT, NEC4, FIDIC, bespoke, etc.)
-5. Extract real dates and deadlines from the contract
-6. NEVER invent clause numbers or terms not present in the provided text
-7. If no contract text is provided, state clearly no contract was uploaded and set contractScore to null
+Analyse the information provided in the message below and return a JSON report based entirely on what you find in that information.
 
-You are trained on:
-- CDM 2015 (UK) and OSHA construction safety standards
-- Nigerian Factory Act and COREN regulations
-- Lagos State Safety Commission guidelines
-- NEC4, JCT, and FIDIC contract forms
-- Nigerian National Building Code
-- ILO construction safety standards for developing countries
+Three rules only:
 
-NIGERIA-SPECIFIC KNOWLEDGE:
-- Most construction fatalities in Nigeria involve: building collapse, falls from height, electrocution, and excavation collapse
-- Common violations: no structural engineer supervision, substandard materials, workers without PPE, no site fencing
-- Contract issues: unsigned variations, missed EOT windows, unclear payment terms, no retention release mechanism
-- Weather hazards: harmattan dust affects concrete quality, rainy season causes excavation instability, high heat causes worker heat stress
+1. Base every finding on the actual input provided. If the user describes a safe site, return a high safety score. If they describe a dangerous one, return a low score. Read what is there.
 
-Always reference specific regulations when flagging risks.
-Always reference specific clause numbers when analysing contracts — only clauses that exist in the provided text.
-Always provide prescriptive actions — not just observations.
-Factor in the provided weather and ground conditions.
+2. For any contract text provided, read it carefully and extract real clause numbers, real party names, and real financial figures. Never invent these.
 
-TASK:
-Analyse the provided construction site conditions and contract, then produce a comprehensive structured JSON report. You MUST return ONLY valid JSON — no markdown, no commentary, no text before or after the JSON object.
+3. Return only the JSON below. No text before it. No text after it.
 
-SCORING GUIDANCE:
-- safetyScore: 100 = perfect compliance, 0 = extreme danger. Deduct heavily for unguarded falls, no PPE, no method statements.
-- contractScore: 100 = contractor-friendly balanced contract, 0 = extremely onerous. Deduct for back-to-back risk, unfair LADs, no EoT provisions.
-
-Return exactly this JSON structure (all fields required — use empty arrays [] for absent data, null for absent strings):
 {
-  "reportTitle": "string — site/project name and analysis type",
-  "summary": "string — 3-sentence executive summary covering site conditions, top risk, and contract posture",
+  "reportTitle": string,
+  "summary": string,
   "safetyScore": number,
   "contractScore": number,
-  "riskCount": { "high": number, "medium": number, "low": number },
-  "detectedObjects": ["array of items observed/detected on site"],
-  "safeObservations": ["array of positive safety observations, min 2"],
+  "riskCount": {
+    "high": number,
+    "medium": number,
+    "low": number
+  },
+  "detectedObjects": string[],
+  "safeObservations": string[],
   "risks": [
     {
-      "id": "RISK-001",
-      "severity": "High",
-      "title": "string",
-      "description": "string — specific, actionable description",
-      "action": "string — immediate remediation step",
-      "regulation": "string — specific reg/standard reference"
+      "id": string,
+      "severity": "High|Medium|Low",
+      "title": string,
+      "description": string,
+      "action": string,
+      "regulation": string
     }
   ],
   "obligations": [
     {
-      "obligation": "string — what must be done",
-      "party": "Contractor",
-      "clause": "string — e.g. 'Clause 3.1'",
-      "due": "string — e.g. '7 days before commencement'",
-      "status": "pending"
+      "obligation": string,
+      "party": "Contractor|Client|Both",
+      "clause": string,
+      "due": string,
+      "status": "pending|done|overdue"
     }
   ],
   "penaltyClauses": [
     {
-      "severity": "High",
-      "title": "string — clause name",
-      "description": "string — what triggers the penalty and typical quantum",
-      "action": "string — how to avoid or mitigate this clause",
-      "clause": "string — clause reference"
+      "severity": "High|Medium|Low",
+      "title": string,
+      "description": string,
+      "action": string,
+      "clause": string
     }
   ],
   "timeline": [
     {
-      "date": "string — ISO date YYYY-MM-DD or relative like '+14 days'",
-      "title": "string",
-      "description": "string",
-      "urgent": true
+      "date": string,
+      "title": string,
+      "description": string,
+      "urgent": boolean
     }
   ],
   "pmActions": [
     {
-      "priority": 1,
-      "action": "string — specific, imperative action",
-      "reason": "string — why this is critical",
-      "deadline": "string — e.g. 'Immediately', 'Within 24 hours', '7 days'"
+      "priority": number,
+      "action": string,
+      "reason": string,
+      "deadline": string
     }
   ],
   "notices": [
     {
-      "severity": "High",
-      "title": "string — type of notice",
-      "description": "string — what the notice covers and consequences of not issuing",
-      "action": "string — format and submission method",
-      "clause": "string — clause reference"
+      "severity": "High|Medium|Low",
+      "title": string,
+      "description": string,
+      "action": string,
+      "clause": string
     }
   ]
+}`
 }
 
-Populate every array with at least 2-3 items where the input data supports it. Be specific — name clauses, cite regulations, give real numbers for LADs where inferable.`;
+export function buildChatSystemPrompt(appContext) {
+  return `You are a construction intelligence AI assistant.
 
-  const parts = [];
+Answer the user's question based on the project context below. Be specific. Reference actual data from the context when it exists. Keep responses under 200 words.
 
-  if (siteDescription) {
-    parts.push(`SITE CONDITIONS / DESCRIPTION:\n${siteDescription}`);
-  }
-
-  if (detectedObjects && detectedObjects.length > 0) {
-    parts.push(`OBJECTS DETECTED BY COMPUTER VISION MODEL:\n${detectedObjects.join(', ')}`);
-  }
-
-  if (contractText) {
-    // Trim to ~8000 chars to stay within context budget alongside system prompt
-    const trimmedContract = contractText.length > 8000
-      ? contractText.substring(0, 8000) + '\n\n[... contract continues — summarise obligations from visible text ...]'
-      : contractText;
-    parts.push(`CONTRACT TEXT:\n${trimmedContract}`);
-  } else {
-    parts.push('CONTRACT: No contract provided. Focus entirely on safety analysis. Set contractScore to null and return empty arrays for contract-specific fields.');
-  }
-
-  if (nerEntities && nerEntities.length > 0) {
-    const entityList = nerEntities
-      .filter(e => e.score > 0.8)
-      .map(e => `${e.word} (${e.entity_group})`)
-      .join(', ');
-    if (entityList) {
-      parts.push(`KEY ENTITIES EXTRACTED BY NER MODEL:\n${entityList}`);
-    }
-  }
-
-  const userMessage = parts.join('\n\n---\n\n') + '\n\nReturn the complete JSON report now.';
-
-  return { systemPrompt, userMessage };
+${appContext || ''}`
 }
 
 export function buildChatPrompt(contractText) {
-  return `You are SiteIQ Contract Analyst — an expert in construction contract law helping site managers and project managers understand their contractual rights and obligations.
+  return `You are a construction contract analyst helping site managers understand their contractual rights and obligations.
 
-You are answering questions about the specific contract provided below. Always:
-- Reference exact clause numbers when answering
-- Translate legal language into plain English the site manager can act on
-- Flag high-risk areas with clear warnings
-- Suggest specific protective actions the contractor should take
-- Be concise but complete — site managers are busy
+Answer questions about the specific contract provided below. Reference exact clause numbers. Translate legal language into plain English. Flag high-risk areas clearly. Keep responses concise.
 
 ${contractText
-  ? `CONTRACT TEXT:\n${contractText.substring(0, 10000)}${contractText.length > 10000 ? '\n\n[Contract continues beyond excerpt]' : ''}`
-  : 'NOTE: No contract has been uploaded. Answer construction contract questions generally, referencing standard JCT/NEC4/FIDIC provisions where relevant.'}
-
-If a question falls outside the contract scope, answer based on standard industry practice and flag it as general guidance rather than contract-specific advice.`;
+  ? `CONTRACT TEXT:\n${contractText.substring(0, 25000)}${contractText.length > 25000 ? '\n\n[Contract continues beyond excerpt]' : ''}`
+  : 'NOTE: No contract has been uploaded. Answer construction contract questions generally.'}`
 }
 
 export function buildAssistantPrompt({ selectedState = 'Lagos', recentProjectTitle = null } = {}) {
-  return `You are SiteIQ Construction Assistant — a specialized AI for Nigerian construction professionals. You have deep knowledge of:
-
-SAFETY:
-- Nigerian Factory Act Cap F1 LFN 2004
-- COREN regulations and standards
-- Lagos State Safety Commission guidelines
-- CDM 2015 (UK) applied to Nigerian context
-- OSHA construction standards
-- ILO safety guidelines for developing countries
-- Common Nigerian site hazards: building collapse, falls, electrocution, excavation failure
-
-CONTRACTS:
-- JCT Standard Building Contract
-- NEC4 Engineering and Construction Contract
-- FIDIC Red Book 1999
-- Nigerian standard public sector contracts
-- Extension of time procedures
-- Variation and claims management
-- Liquidated damages and penalties
-- Retention and payment terms
-
-GROUND CONDITIONS:
-- Nigerian soil types by state
-- Foundation design principles
-- Flood risk management
-- Rainy season construction planning
+  return `You are a construction intelligence AI assistant for Nigerian construction professionals.
 
 CURRENT CONTEXT:
 User's selected state: ${selectedState}
 ${recentProjectTitle ? `Recent analysis: ${recentProjectTitle}` : 'No recent analysis in this session.'}
 
-FORMAT YOUR RESPONSES:
-- Use plain English — assume the user is a site manager not a lawyer
-- Reference specific regulations using [Reg: regulation name] format
-- Reference contract clauses using [Clause X.X] format
-- Keep responses under 200 words unless detail is essential
-- End each response with 2-3 suggested follow-up questions formatted as:
-  FOLLOW_UPS: question1 | question2 | question3`
-}
-
-export function buildChatSystemPrompt(appContext) {
-  return `You are SiteIQ — an expert AI assistant specialising in Nigerian construction safety and contract intelligence.
-
-You have deep knowledge of:
-- Nigerian Factory Act and COREN regulations
-- Lagos State Safety Commission guidelines
-- CDM 2015, OSHA, and ILO standards
-- JCT, NEC4, and FIDIC contract forms
-- Nigerian soil conditions and flood risks
-- Construction safety for all 37 Nigerian states
-
-${appContext}
-
-RESPONSE STYLE:
-- Be specific and reference actual data from the context above
-- Keep responses under 200 words unless asked for detail
-- Use plain English — not legal jargon
-- Reference regulations as [Reg: name]
-- Reference clauses as [Clause X.X]
-- End responses with 2-3 follow-up question suggestions when helpful, formatted as:
-  FOLLOW_UPS: question1 | question2 | question3`
+Keep responses under 200 words unless detail is essential. End each response with 2-3 suggested follow-up questions formatted as:
+FOLLOW_UPS: question1 | question2 | question3`
 }
 
 // ── Demo scenario data ──────────────────────────────────────────────────────
@@ -346,7 +235,7 @@ Observations:
 - 4 workers on roof without any fall arrest system — no harnesses, no safety lines, no safety net visible
 - Roof edge has no edge protection — open drop of 8.5m to hardstanding below
 - Fragile roof areas (old rooflights — some polycarbonate, some glass) not marked or protected
-- Weather conditions: winds gusting 28mph — borderline for safe working at height (HSE recommends suspension above 32mph but BS 8411 guidance suggests caution above 25mph)
+- Weather conditions: winds gusting 28mph — borderline for safe working at height
 - MEWP (cherry picker) on site but not being used for edge access
 - No safety briefing observed — workers commenced immediately on arrival
 - Gas stripping torch in use near insulation — no fire extinguisher visible within 10m
@@ -438,7 +327,7 @@ This Contract constitutes the entire agreement between the parties. All prior re
 CLAUSE 3.5 — EMPLOYER'S AGENT
 The Employer's Agent acts on behalf of the Employer and has full authority to issue instructions. The Employer's Agent has no duty of independence and shall not be liable to the Contractor for any decision made in good faith. The Contractor has no right of objection to the identity of the Employer's Agent.`,
   },
-];
+]
 
 // ── Fallback demo report (used when API calls fail) ─────────────────────────
 
@@ -460,72 +349,72 @@ export const FALLBACK_DEMO_REPORT = {
       severity: 'High',
       title: 'Unprotected Excavation Edge — Risk of Fatal Fall',
       description: 'Three workers operating inside a 4.5m deep excavation with no edge protection, barriers, or physical barriers at the top of the excavation. A fall from this height is likely to be fatal.',
-      action: 'STOP WORK immediately. Install Heras fencing or excavation edge barriers at minimum 1m from excavation lip before allowing any further work in the vicinity. Erect physical barriers complying with BS EN 13374 Class C.',
-      regulation: 'Work at Height Regulations 2005, Reg 6; CDM 2015 Reg 22; HSE CIS 69',
+      action: 'STOP WORK immediately. Install Heras fencing or excavation edge barriers at minimum 1m from excavation lip before allowing any further work in the vicinity.',
+      regulation: 'Work at Height Regulations 2005, Reg 6; CDM 2015 Reg 22',
     },
     {
       id: 'RISK-002',
       severity: 'High',
       title: 'Unsupported Excavation Face — Collapse Risk',
-      description: 'East face of excavation has no shoring, temporary support, or battering in sandy soil. The Angle of Repose for loose sand is approximately 30°. Current vertical face represents imminent collapse risk that could bury workers.',
-      action: 'Install hydraulic shoring, sheet piling, or batch excavation face to stable angle (minimum 45° in sandy soil) before any work continues near east face. Engage Geotechnical Engineer to assess soil bearing and specify support solution.',
-      regulation: 'CDM 2015 Reg 22; BS 8000-1:2016; HSE HSG185 Excavations guidance',
+      description: 'East face of excavation has no shoring, temporary support, or battering in sandy soil. Current vertical face represents imminent collapse risk that could bury workers.',
+      action: 'Install hydraulic shoring, sheet piling, or batch excavation face to stable angle before any work continues near east face.',
+      regulation: 'CDM 2015 Reg 22; BS 8000-1:2016',
     },
     {
       id: 'RISK-003',
       severity: 'High',
       title: 'Worker Without PPE — Head Injury Risk',
-      description: 'One operative observed without hard hat while operating pneumatic drill. Pneumatic drill vibration and material ejection creates significant head injury risk. No PPE assessment visible.',
-      action: 'Issue formal stop-work instruction to the operative. Issue replacement PPE immediately. Record in site safety log. Issue disciplinary warning per company PPE policy. Conduct PPE toolbox talk for all workers on site today.',
-      regulation: 'PPE at Work Regulations 2022; Construction (Head Protection) Regulations 1989; HSE INDG174',
+      description: 'One operative observed without hard hat while operating pneumatic drill.',
+      action: 'Issue formal stop-work instruction. Issue replacement PPE immediately. Record in site safety log.',
+      regulation: 'PPE at Work Regulations 2022',
     },
     {
       id: 'RISK-004',
       severity: 'High',
       title: 'Excavator Operating at Unsafe Proximity to Excavation',
-      description: 'Excavator operating within 1m of excavation edge without ground bearing assessment. Ground loading from machine (typically 3-8 tonnes) could cause edge collapse, potentially burying workers below.',
-      action: 'Relocate excavator to minimum 2m from excavation edge or as specified by Geotechnical Engineer. Conduct ground bearing assessment. Install physical stop blocks to prevent plant encroachment.',
-      regulation: 'PUWER 1998; CDM 2015 Reg 22; BS 6031:2009 Earthworks',
+      description: 'Excavator operating within 1m of excavation edge without ground bearing assessment.',
+      action: 'Relocate excavator to minimum 2m from excavation edge. Conduct ground bearing assessment.',
+      regulation: 'PUWER 1998; CDM 2015 Reg 22',
     },
     {
       id: 'RISK-005',
       severity: 'Medium',
       title: 'No Method Statement or Risk Assessment on Site Board',
-      description: 'CDM 2015 requires a Construction Phase Plan (CPP) with specific method statements for high-risk activities. No CPP, MS, or RA visible on site board for excavation works.',
-      action: 'Produce specific Method Statement and Risk Assessment for excavation works before next shift. Display on site board. Brief all workers. Record attendance at briefing.',
-      regulation: 'CDM 2015 Reg 12; L153 Managing Health and Safety in Construction',
+      description: 'No CPP, MS, or RA visible on site board for excavation works.',
+      action: 'Produce specific Method Statement and Risk Assessment for excavation works before next shift.',
+      regulation: 'CDM 2015 Reg 12',
     },
     {
       id: 'RISK-006',
       severity: 'Medium',
-      title: 'Inadequate Ladder Access — Trip and Fall Risk',
-      description: 'Ladder into excavation observed at near-vertical angle. BS 5395 requires ladders at 75° (1:4 ratio). Near-vertical ladders are extremely difficult to descend safely with tools.',
-      action: 'Reposition ladder to correct 75° angle. Tie top of ladder to prevent slipping. Extend ladder at least 1m above top of excavation. Consider installing fixed aluminium ladder with handrails for deep excavation access.',
-      regulation: 'Work at Height Regulations 2005 Schedule 5; BS 5395-1:2010; HSE INDG455',
+      title: 'Inadequate Ladder Access',
+      description: 'Ladder into excavation observed at near-vertical angle.',
+      action: 'Reposition ladder to correct 75° angle. Tie top of ladder. Extend 1m above excavation.',
+      regulation: 'Work at Height Regulations 2005 Schedule 5',
     },
     {
       id: 'RISK-007',
       severity: 'Medium',
       title: 'No Welfare Facilities Within Accessible Distance',
-      description: 'No welfare facilities (toilets, washing facilities, rest area) observed within 50 metres of the excavation. CDM 2015 Schedule 2 requires suitable facilities for all workers.',
-      action: 'Install welfare unit with WC, washing facilities, and rest area within reasonable walking distance of workface. Minimum 1 toilet per 25 workers (or fraction thereof).',
-      regulation: 'CDM 2015 Schedule 2; Construction (Design and Management) Regs 2015',
+      description: 'No welfare facilities observed within 50 metres of the excavation.',
+      action: 'Install welfare unit with WC, washing facilities, and rest area within reasonable walking distance.',
+      regulation: 'CDM 2015 Schedule 2',
     },
     {
       id: 'RISK-008',
       severity: 'Low',
       title: 'Workers Not Wearing High-Visibility Vests',
-      description: 'Workers inside excavation and adjacent to active road not wearing high-visibility vests. Site is adjacent to public road with vehicle movements.',
-      action: 'Enforce mandatory high-visibility Class 2 vest policy for all workers. Include in daily toolbox talk. Post signage at site entrance.',
-      regulation: 'PPE at Work Regulations 2022; BS EN ISO 20471:2013 Class 2',
+      description: 'Workers inside excavation not wearing high-visibility vests adjacent to active road.',
+      action: 'Enforce mandatory high-visibility Class 2 vest policy for all workers.',
+      regulation: 'PPE at Work Regulations 2022',
     },
     {
       id: 'RISK-009',
       severity: 'Low',
       title: 'No Confined Space Entry Log',
-      description: 'Deep excavation (>1.2m) constitutes a confined space under certain atmospheric conditions. No confined space entry permit or atmospheric monitoring equipment observed.',
-      action: 'Assess excavation for confined space risks (gas ingress, oxygen deficiency). If confirmed, implement Permit to Work system, atmospheric monitoring, and rescue arrangements.',
-      regulation: 'Confined Spaces Regulations 1997; L101 Safe Work in Confined Spaces',
+      description: 'No confined space entry permit or atmospheric monitoring equipment observed.',
+      action: 'Assess excavation for confined space risks. Implement Permit to Work system if required.',
+      regulation: 'Confined Spaces Regulations 1997',
     },
   ],
   obligations: [
@@ -557,135 +446,46 @@ export const FALLBACK_DEMO_REPORT = {
       due: 'Within 28 days of becoming aware',
       status: 'pending',
     },
-    {
-      obligation: 'Ensure all workers hold valid CSCS cards',
-      party: 'Contractor',
-      clause: 'JCT Clause 6.1',
-      due: 'Ongoing — before each operative commences work',
-      status: 'pending',
-    },
-    {
-      obligation: 'Maintain and update site-specific Construction Phase Plan',
-      party: 'Contractor',
-      clause: 'CDM 2015 Reg 12(3)',
-      due: 'Ongoing — review after any significant change',
-      status: 'pending',
-    },
   ],
   penaltyClauses: [
     {
       severity: 'High',
       title: 'Liquidated and Ascertained Damages',
-      description: 'Employer may deduct £1,500 per calendar day of delay against the Contractor. With 258 calendar days remaining on the programme, total potential exposure is £387,000 (15.8% of contract value) — significant for a small contractor.',
-      action: 'Maintain detailed programme (Gantt/P6). Issue EoT notices within 28 days for all qualifying events. Document all Employer-caused delays immediately. Consider programme float strategy.',
+      description: 'Employer may deduct £1,500 per calendar day of delay against the Contractor.',
+      action: 'Maintain detailed programme. Issue EoT notices within 28 days for all qualifying events.',
       clause: 'JCT Clause 4.7',
     },
     {
       severity: 'High',
       title: 'Employer Termination for Cause — CDM Non-Compliance',
-      description: 'Employer may terminate immediately if Contractor fails to comply with a CDM notice. Given the current site safety violations, an HSE improvement notice would give Employer grounds for termination with no loss of profit entitlement.',
-      action: 'Rectify all safety violations immediately. Ensure CPP is produced and displayed. Brief all site operatives. Document all corrective actions.',
+      description: 'Employer may terminate immediately if Contractor fails to comply with a CDM notice.',
+      action: 'Rectify all safety violations immediately. Ensure CPP is produced and displayed.',
       clause: 'JCT Clause 8.4',
     },
     {
       severity: 'Medium',
       title: 'Retention — Extended Hold at 3%',
-      description: 'Employer holds 3% retention throughout the works (approx. £73,500 at contract completion) with second moiety released only after 12-month Rectification Period. Retention is not held in a separate account — risk if Employer becomes insolvent.',
-      action: 'Request retention bond or ring-fenced retention account. Document all practical completion items to accelerate PC certificate. Monitor Employer financial health throughout project.',
+      description: 'Employer holds 3% retention throughout the works with second moiety released after 12-month Rectification Period.',
+      action: 'Request retention bond or ring-fenced retention account.',
       clause: 'JCT Clause 4.15',
     },
   ],
   timeline: [
-    {
-      date: '2026-04-12',
-      title: 'IMMEDIATE: Stop work on excavation',
-      description: 'Halt all work adjacent to unprotected excavation edges. Install barriers and shoring before resuming.',
-      urgent: true,
-    },
-    {
-      date: '2026-04-13',
-      title: 'Produce Method Statement and Risk Assessment',
-      description: 'Complete site-specific MS and RA for excavation works. Brief all workers. Display on site board.',
-      urgent: true,
-    },
-    {
-      date: '2026-04-14',
-      title: 'HSE F10 Notification (if not yet submitted)',
-      description: 'Submit CDM F10 notification to HSE online portal. Failure is a criminal offence.',
-      urgent: true,
-    },
-    {
-      date: '2026-04-19',
-      title: 'Insurance documentation to Employer',
-      description: 'Employer may request insurance evidence at any time — ensure all policies are current and available.',
-      urgent: false,
-    },
-    {
-      date: '2026-09-30',
-      title: 'Date for Completion — LADs commence',
-      description: '£1,500/day LADs apply from this date. Monitor programme weekly against this milestone.',
-      urgent: false,
-    },
+    { date: '2026-04-12', title: 'IMMEDIATE: Stop work on excavation', description: 'Halt all work adjacent to unprotected excavation edges.', urgent: true },
+    { date: '2026-04-13', title: 'Produce Method Statement and Risk Assessment', description: 'Complete site-specific MS and RA for excavation works.', urgent: true },
+    { date: '2026-04-14', title: 'HSE F10 Notification', description: 'Submit CDM F10 notification to HSE online portal.', urgent: true },
+    { date: '2026-09-30', title: 'Date for Completion — LADs commence', description: '£1,500/day LADs apply from this date.', urgent: false },
   ],
   pmActions: [
-    {
-      priority: 1,
-      action: 'STOP WORK on excavation — install edge protection and shoring NOW',
-      reason: 'Live fatality risk — workers in 4.5m unprotected excavation with no edge barriers or face support. HSE has power to serve Prohibition Notice which would halt the entire site.',
-      deadline: 'Immediately — before next shift',
-    },
-    {
-      priority: 2,
-      action: 'Produce CDM Construction Phase Plan and submit HSE F10 notification',
-      reason: 'Contractor is Principal Contractor under CDM 2015. Absence of CPP is a criminal offence. Employer can terminate for CDM non-compliance (Clause 8.4).',
-      deadline: 'Within 24 hours',
-    },
-    {
-      priority: 3,
-      action: 'Conduct safety induction and PPE toolbox talk for all site operatives',
-      reason: 'PPE violations observed. All workers must be briefed on site-specific hazards. Record attendance with signatures.',
-      deadline: 'Before work recommences tomorrow morning',
-    },
-    {
-      priority: 4,
-      action: 'Engage Geotechnical Engineer to assess excavation and specify shoring design',
-      reason: 'Sandy soil + 4.5m depth + proximity of plant = high collapse risk. Needs specialist assessment per CDM 2015 Reg 22 and BS 6031.',
-      deadline: 'Within 48 hours',
-    },
-    {
-      priority: 5,
-      action: 'Review programme against Date for Completion (30 Sept 2026) — issue EoT if delayed',
-      reason: 'Work stoppage will extend programme. EoT notice must be issued within 28 days of becoming aware of any Relevant Event to preserve entitlement.',
-      deadline: 'Within 7 days',
-    },
-    {
-      priority: 6,
-      action: 'Provide evidence of all insurances to Employer',
-      reason: 'Contract Clause 6.4 requires EL, PL, and CAR policies. Failure to provide within 7 days of request is a breach.',
-      deadline: 'Ensure policies are current — provide within 7 days of any request',
-    },
+    { priority: 1, action: 'STOP WORK on excavation — install edge protection and shoring NOW', reason: 'Live fatality risk — workers in 4.5m unprotected excavation.', deadline: 'Immediately' },
+    { priority: 2, action: 'Produce CDM Construction Phase Plan and submit HSE F10 notification', reason: 'Absence of CPP is a criminal offence.', deadline: 'Within 24 hours' },
+    { priority: 3, action: 'Conduct safety induction and PPE toolbox talk for all site operatives', reason: 'PPE violations observed.', deadline: 'Before work recommences' },
+    { priority: 4, action: 'Engage Geotechnical Engineer to assess excavation and specify shoring design', reason: 'Sandy soil + 4.5m depth = high collapse risk.', deadline: 'Within 48 hours' },
+    { priority: 5, action: 'Review programme against Date for Completion — issue EoT if delayed', reason: 'Work stoppage will extend programme. EoT notice must be issued within 28 days.', deadline: 'Within 7 days' },
   ],
   notices: [
-    {
-      severity: 'High',
-      title: 'CDM F10 Notification to HSE',
-      description: 'Where construction work is expected to last more than 30 working days with more than 20 workers simultaneously, or exceed 500 person-days, the Principal Contractor must notify HSE before construction begins.',
-      action: 'Submit online via HSE F10 portal (hse.gov.uk/forms/notification). Display F10 acknowledgment on site board.',
-      clause: 'CDM 2015 Regulation 6',
-    },
-    {
-      severity: 'High',
-      title: 'Extension of Time Notice — Programme Delay',
-      description: 'Any delay caused by a Relevant Event (Employer instructions, exceptional weather, statutory undertaker delays) must be notified within 28 days or the Contractor loses entitlement to EoT and cost recovery.',
-      action: 'Serve written notice to Employer specifying: date event arose, nature of Relevant Event, estimated delay to Completion Date. Use recorded delivery.',
-      clause: 'JCT Clause 2.29',
-    },
-    {
-      severity: 'Medium',
-      title: 'Insurance Evidence Request Response',
-      description: 'Employer may request evidence of EL, PL, and CAR insurance policies at any time. Failure to respond within 7 days allows Employer to arrange cover and recover cost from Contractor.',
-      action: 'Maintain copies of all policy schedules on site and in head office. Respond to any request within 7 days with certified copies.',
-      clause: 'JCT Clause 6.4',
-    },
+    { severity: 'High', title: 'CDM F10 Notification to HSE', description: 'Principal Contractor must notify HSE before construction begins where project exceeds thresholds.', action: 'Submit online via HSE F10 portal. Display acknowledgment on site board.', clause: 'CDM 2015 Regulation 6' },
+    { severity: 'High', title: 'Extension of Time Notice', description: 'Any delay caused by a Relevant Event must be notified within 28 days or entitlement is lost.', action: 'Serve written notice specifying: date event arose, nature of Relevant Event, estimated delay.', clause: 'JCT Clause 2.29' },
+    { severity: 'Medium', title: 'Insurance Evidence Request Response', description: 'Employer may request evidence of insurance policies at any time.', action: 'Maintain copies of all policy schedules on site. Respond within 7 days.', clause: 'JCT Clause 6.4' },
   ],
-};
+}

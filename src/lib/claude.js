@@ -62,17 +62,60 @@ async function fileToBase64(file) {
  * @param {Function} payload.onStep           - progress callback(stepLabel)
  * @returns {Object} parsed report JSON
  */
-export async function analyseSite({ siteDescription, detectedObjects, contractText, nerEntities, photoFiles, onStep }) {
+export async function analyseSite({ siteDescription, detectedObjects, contractText, nerEntities, photoFiles, projectInfo, weatherContext, geoContext, onStep }) {
   try {
     onStep?.('Claude: generating safety assessment')
-    const { systemPrompt, userMessage } = buildAnalysisPrompt({
-      siteDescription,
-      detectedObjects,
-      contractText,
-      nerEntities,
-    })
+    const systemPrompt = buildAnalysisPrompt()
 
-    // Build message content — prepend image blocks if photos are available
+    // Build user message — contract first, then context, then instruction
+    const parts = []
+
+    // 1 — CONTRACT (most important — first)
+    if (contractText && contractText.length > 50) {
+      parts.push(`CONTRACT:\n${contractText.slice(0, 25000)}`)
+    } else {
+      parts.push('CONTRACT: None provided.')
+    }
+
+    // 2 — SITE DESCRIPTION
+    if (siteDescription?.trim()) {
+      parts.push(`SITE DESCRIPTION:\n${siteDescription}`)
+    }
+
+    // 3 — PROJECT DETAILS
+    parts.push(`PROJECT:
+Name: ${projectInfo?.projectName || 'Not given'}
+Nigerian state: ${projectInfo?.selectedState || 'Lagos'}
+Construction phase: ${projectInfo?.constructionPhase || 'Not given'}
+Workers on site: ${projectInfo?.workerCount || 'Not given'}`)
+
+    // 4 — COMPUTER VISION DETECTIONS
+    if (detectedObjects && detectedObjects.length > 0) {
+      parts.push(`OBJECTS DETECTED IN PHOTOS:\n${detectedObjects.join(', ')}`)
+    }
+
+    // 5 — WEATHER (if available)
+    if (weatherContext?.trim()) {
+      parts.push(`WEATHER:\n${weatherContext}`)
+    }
+
+    // 6 — GROUND CONDITIONS (if available)
+    if (geoContext?.trim()) {
+      parts.push(`GROUND:\n${geoContext}`)
+    }
+
+    // 7 — SINGLE INSTRUCTION
+    parts.push('Analyse everything above and return the JSON report. Base it only on what is provided here.')
+
+    const userMessage = parts.join('\n\n')
+
+    console.log('--- CLAUDE MESSAGE ---')
+    console.log('Contract chars:', contractText?.length || 0)
+    console.log('Site description chars:', siteDescription?.length || 0)
+    console.log('Photos:', photoFiles?.length || 0)
+    console.log('Message preview:', userMessage.slice(0, 500))
+
+    // Build message content — image blocks first, then text
     const userContent = []
     if (photoFiles && photoFiles.length > 0) {
       for (const file of photoFiles.slice(0, 4)) {
@@ -98,12 +141,24 @@ export async function analyseSite({ siteDescription, detectedObjects, contractTe
 
     onStep?.('Claude: building PM action plan')
 
-    // Strip any markdown code fences Claude might wrap the JSON in
-    const jsonText = rawText
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```\s*$/, '')
-      .trim()
+    // Extract JSON object robustly — handles code fences, leading/trailing text
+    let jsonText = rawText.trim()
+    // Strip markdown code fences if present
+    jsonText = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+    // If there's still non-JSON text before the object, find the first {
+    if (!jsonText.startsWith('{')) {
+      const objStart = jsonText.indexOf('{')
+      const arrStart = jsonText.indexOf('[')
+      const start = objStart === -1 ? arrStart : arrStart === -1 ? objStart : Math.min(objStart, arrStart)
+      if (start !== -1) jsonText = jsonText.slice(start)
+    }
+    // Trim any trailing text after the final }
+    const lastBrace = jsonText.lastIndexOf('}')
+    if (lastBrace !== -1 && lastBrace < jsonText.length - 1) {
+      jsonText = jsonText.slice(0, lastBrace + 1)
+    }
 
+    console.log('[SiteIQ] JSON extraction preview:', jsonText.slice(0, 200))
     const report = JSON.parse(jsonText)
 
     // Ensure required fields exist with sensible defaults
